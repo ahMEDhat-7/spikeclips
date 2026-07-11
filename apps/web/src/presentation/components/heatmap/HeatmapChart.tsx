@@ -10,24 +10,12 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-
-interface HeatmapPoint {
-  start_time: number;
-  end_time: number;
-  value: number;
-}
-
-interface Scene {
-  start: number;
-  end: number;
-  score: number;
-  peakIntensity: number;
-}
+import { HeatmapSpike, ScoredBlock } from "@/domain/entities/job";
 
 interface HeatmapChartProps {
-  heatmap: HeatmapPoint[];
-  scenes?: Scene[];
-  onSceneClick?: (scene: Scene) => void;
+  heatmap: HeatmapSpike[];
+  scenes?: ScoredBlock[];
+  onSceneClick?: (scene: ScoredBlock) => void;
 }
 
 function formatTime(seconds: number): string {
@@ -48,13 +36,30 @@ export function HeatmapChart({
   }));
 
   return (
-    <div className="w-full h-[300px]">
+    <div className="w-full h-[200px] sm:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+        >
           <defs>
-            <linearGradient id="intensityGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.1} />
+            <linearGradient
+              id="intensityGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="5%"
+                stopColor="var(--primary)"
+                stopOpacity={0.8}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--primary)"
+                stopOpacity={0.1}
+              />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -90,7 +95,7 @@ export function HeatmapChart({
           {scenes.map((scene, i) => (
             <ReferenceLine
               key={i}
-              x={formatTime(scene.start)}
+              x={formatTime(scene.start_time)}
               stroke="var(--destructive)"
               strokeDasharray="3 3"
               onClick={() => onSceneClick?.(scene)}

@@ -5,17 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, LinkIcon } from "lucide-react";
+import { YoutubeUrl } from "@/domain/entities/job";
 
 interface UrlInputProps {
   onSubmit?: (url: string) => void;
   isLoading?: boolean;
-}
-
-function isValidYouTubeUrl(url: string): boolean {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([^&?#]+)/,
-  ];
-  return patterns.some((p) => p.test(url));
 }
 
 export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
@@ -31,7 +25,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
       return;
     }
 
-    if (!isValidYouTubeUrl(url)) {
+    if (!YoutubeUrl.isValid(url)) {
       setError("Please enter a valid YouTube URL");
       return;
     }
@@ -48,7 +42,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
           <Input
             type="url"
             placeholder="https://youtube.com/watch?v=..."
@@ -57,7 +51,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
             className="flex-1"
             disabled={isLoading}
           />
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

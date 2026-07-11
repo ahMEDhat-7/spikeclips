@@ -1,73 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { UrlInput } from "@/components/UrlInput";
-import { HeatmapChart } from "@/components/HeatmapChart";
-import { SceneList } from "@/components/SceneList";
+import { UrlInput } from "@/presentation/components/jobs/UrlInput";
+import { HeatmapChart } from "@/presentation/components/heatmap/HeatmapChart";
+import { SceneList } from "@/presentation/components/scenes/SceneList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAnalyzeVideo } from "@/application/hooks/use-analyze-video";
 import { Loader2 } from "lucide-react";
 
-interface Job {
-  id: string;
-  status: string;
-  videoTitle: string;
-  videoThumbnail: string;
-  scenes: any[];
-  heatmapData: any[];
-}
-
-export default function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const initialUrl = searchParams.get("url") || "";
 
-  const [job, setJob] = useState<Job | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const analyzeVideo = async (url: string) => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, userId: "demo-user" }),
-      });
-
-      if (!res.ok) throw new Error("Failed to create job");
-
-      const newJob = await res.json();
-      setJob(newJob);
-
-      const processRes = await fetch(`/api/jobs/${newJob.id}/process`, {
-        method: "POST",
-      });
-
-      if (!processRes.ok) throw new Error("Failed to process heatmap");
-
-      const processedJob = await processRes.json();
-      setJob(processedJob);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (initialUrl) {
-      analyzeVideo(initialUrl);
-    }
-  }, [initialUrl]);
+  const { job, isLoading, error, analyze } = useAnalyzeVideo();
 
   return (
-    <main className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+    <main className="container mx-auto p-4 sm:p-6 space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
 
-      <UrlInput onSubmit={analyzeVideo} isLoading={isLoading} />
+      <UrlInput onSubmit={analyze} isLoading={isLoading} />
 
       {error && (
         <Card className="border-destructive">
@@ -79,17 +33,23 @@ export default function Dashboard() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 {job.videoThumbnail && (
                   <img
                     src={job.videoThumbnail}
                     alt={job.videoTitle}
-                    className="w-32 h-18 object-cover rounded"
+                    className="w-full sm:w-32 h-auto sm:h-18 object-cover rounded"
                   />
                 )}
-                <div>
-                  <CardTitle>{job.videoTitle}</CardTitle>
-                  <Badge variant={job.status === "completed" ? "default" : "secondary"}>
+                <div className="space-y-1">
+                  <CardTitle className="text-lg sm:text-xl">
+                    {job.videoTitle}
+                  </CardTitle>
+                  <Badge
+                    variant={
+                      job.status === "completed" ? "default" : "secondary"
+                    }
+                  >
                     {job.status}
                   </Badge>
                 </div>
@@ -104,12 +64,15 @@ export default function Dashboard() {
                   <CardTitle>Engagement Heatmap</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <HeatmapChart heatmap={job.heatmapData} scenes={job.scenes} />
+                  <HeatmapChart
+                    heatmap={job.heatmapData ?? []}
+                    scenes={job.scenes ?? []}
+                  />
                 </CardContent>
               </Card>
 
               <SceneList
-                scenes={job.scenes}
+                scenes={job.scenes ?? []}
                 onExport={(selected) => {
                   console.log("Exporting:", selected);
                 }}
@@ -127,6 +90,27 @@ export default function Dashboard() {
           )}
         </div>
       )}
+
+      {!job && !isLoading && (
+        <div className="text-center py-12 text-muted-foreground">
+          Enter a YouTube URL above to get started.
+        </div>
+      )}
     </main>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense
+      fallback={
+        <main className="container mx-auto p-4 sm:p-6 space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-[120px] w-full" />
+        </main>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
