@@ -1,6 +1,8 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
+import { GlobalExceptionFilter } from "./presentation/filters/exception.filter";
+import { LoggingInterceptor } from "./presentation/interceptors/logging.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +16,9 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.enableCors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",

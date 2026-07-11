@@ -1,0 +1,45 @@
+import {
+  JobStatus,
+  ScoredBlock,
+  HeatmapSpike,
+} from "@spikeclip/shared";
+
+export class Job {
+  constructor(
+    public readonly id: string,
+    public readonly userId: string,
+    public readonly url: string,
+    public videoTitle?: string,
+    public videoThumbnail?: string,
+    public videoDuration?: number,
+    public status: JobStatus = "pending",
+    public scenes?: ScoredBlock[],
+    public heatmapData?: HeatmapSpike[],
+    public errorMessage?: string,
+    public readonly createdAt: Date = new Date(),
+    public completedAt?: Date
+  ) {}
+
+  canProcess(): boolean {
+    return this.status === "pending" || this.status === "processing";
+  }
+
+  markProcessing(): void {
+    this.status = "processing";
+  }
+
+  markCompleted(scenes: ScoredBlock[]): void {
+    this.status = "completed";
+    this.scenes = scenes;
+    this.completedAt = new Date();
+  }
+
+  markFailed(error: string): void {
+    this.status = "failed";
+    this.errorMessage = error;
+  }
+
+  hasHeatmapData(): boolean {
+    return Boolean(this.heatmapData && this.heatmapData.length > 0);
+  }
+}

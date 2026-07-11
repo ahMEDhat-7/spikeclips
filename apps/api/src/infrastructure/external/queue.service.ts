@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
+import { QueueService } from "../../domain/services/queue";
 
 const connection = new Redis({
   host: process.env.REDIS_HOST || "localhost",
@@ -9,8 +10,8 @@ const connection = new Redis({
 });
 
 @Injectable()
-export class QueueService implements OnModuleDestroy {
-  private readonly logger = new Logger(QueueService.name);
+export class BullMQQueueService implements QueueService, OnModuleDestroy {
+  private readonly logger = new Logger(BullMQQueueService.name);
   private readonly analysisQueue: Queue;
   private readonly exportQueue: Queue;
 
@@ -20,16 +21,22 @@ export class QueueService implements OnModuleDestroy {
     this.logger.log("Queues initialized");
   }
 
-  async addAnalysisJob(jobId: string, data: { url: string; userId: string }) {
-    return this.analysisQueue.add("process", data, {
+  async addAnalysisJob(
+    jobId: string,
+    data: { url: string; userId: string }
+  ): Promise<void> {
+    await this.analysisQueue.add("process", data, {
       jobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
     });
   }
 
-  async addExportJob(jobId: string, data: { clipId: string; sceneIndex: number }) {
-    return this.exportQueue.add("export-clip", data, {
+  async addExportJob(
+    jobId: string,
+    data: { clipId: string; sceneIndex: number }
+  ): Promise<void> {
+    await this.exportQueue.add("export-clip", data, {
       jobId: `export-${jobId}-${data.sceneIndex}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
