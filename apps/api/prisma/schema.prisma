@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String?
+  plan             String   @default("free")
+  stripeCustomerId String?
+  analysesUsed     Int      @default(0)
+  analysesLimit    Int      @default(3)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  jobs             Job[]
+}
+
+model Job {
+  id              String   @id @default(uuid())
+  userId          String
+  url             String
+  videoTitle      String?
+  videoThumbnail  String?
+  videoDuration   Float?
+  status          String   @default("pending")
+  scenes          Json?
+  heatmapData     Json?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  user            User     @relation(fields: [userId], references: [id])
+  clips           Clip[]
+}
+
+model Clip {
+  id              String   @id @default(uuid())
+  jobId           String
+  sceneIndex      Int
+  startTime       Float
+  endTime         Float
+  peakIntensity   Float?
+  status          String   @default("pending")
+  fileUrl         String?
+  fileSize        Int?
+  duration        Float?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  job             Job      @relation(fields: [jobId], references: [id])
+}
