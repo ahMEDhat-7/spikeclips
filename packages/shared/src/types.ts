@@ -1,4 +1,5 @@
-// Spike types
+// Algorithm types (snake_case — matches Python source of truth)
+
 export interface HeatmapSpike {
   start_time: number;
   end_time: number;
@@ -6,6 +7,17 @@ export interface HeatmapSpike {
 }
 
 export interface MergedBlock {
+  start_time: number;
+  end_time: number;
+  peak_intensity: number;
+  last_value: number;
+  weighted_sum: number;
+  total_duration: number;
+  used_floor_override: boolean;
+  segments: HeatmapSpike[];
+}
+
+export interface ScoredBlock {
   start_time: number;
   end_time: number;
   duration: number;
@@ -16,7 +28,36 @@ export interface MergedBlock {
   capped: boolean;
 }
 
-// Job types
+export interface AlgorithmConfig {
+  gap_tolerance: number;
+  intensity_tolerance: number;
+  min_intensity_cutoff: number;
+  min_clip_duration: number;
+  max_clip_duration: number;
+  target_duration_range: [number, number];
+  top_n: number;
+  min_spacing: number;
+  weight_peak: number;
+  weight_avg: number;
+  weight_duration_fit: number;
+}
+
+export const DEFAULT_ALGORITHM_CONFIG: AlgorithmConfig = {
+  gap_tolerance: 5.0,
+  intensity_tolerance: 0.25,
+  min_intensity_cutoff: 0.40,
+  min_clip_duration: 3.0,
+  max_clip_duration: 60.0,
+  target_duration_range: [15.0, 60.0],
+  top_n: 3,
+  min_spacing: 5.0,
+  weight_peak: 0.4,
+  weight_avg: 0.4,
+  weight_duration_fit: 0.2,
+};
+
+// Job types (camelCase — matches Prisma/database schema)
+
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface Job {
@@ -27,7 +68,7 @@ export interface Job {
   videoThumbnail?: string;
   videoDuration?: number;
   status: JobStatus;
-  scenes?: MergedBlock[];
+  scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];
   errorMessage?: string;
   createdAt: Date;
@@ -35,6 +76,7 @@ export interface Job {
 }
 
 // Clip types
+
 export type ClipStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface Clip {
@@ -54,6 +96,7 @@ export interface Clip {
 }
 
 // User types
+
 export type PlanTier = "free" | "pro" | "team";
 
 export interface User {
@@ -67,32 +110,3 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Algorithm configuration
-export interface AlgorithmConfig {
-  gapTolerance: number;
-  intensityTolerance: number;
-  minIntensityCutoff: number;
-  minClipDuration: number;
-  maxClipDuration: number;
-  targetDurationRange: [number, number];
-  topN: number;
-  minSpacing: number;
-  weightPeak: number;
-  weightAvg: number;
-  weightDurationFit: number;
-}
-
-export const DEFAULT_ALGORITHM_CONFIG: AlgorithmConfig = {
-  gapTolerance: 5.0,
-  intensityTolerance: 0.25,
-  minIntensityCutoff: 0.40,
-  minClipDuration: 3.0,
-  maxClipDuration: 60.0,
-  targetDurationRange: [15.0, 60.0],
-  topN: 3,
-  minSpacing: 5.0,
-  weightPeak: 0.4,
-  weightAvg: 0.4,
-  weightDurationFit: 0.2,
-};
