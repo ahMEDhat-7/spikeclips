@@ -2,6 +2,10 @@
 node_modules/
 .pnpm-store/
 
+# Agent skills (dev only)
+agents/
+skills/
+
 # Build outputs
 .next/
 dist/
