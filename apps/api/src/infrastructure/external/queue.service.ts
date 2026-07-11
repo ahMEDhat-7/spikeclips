@@ -3,6 +3,16 @@ import { Queue, Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { QueueService } from "../../domain/services/queue";
 
+export interface AnalysisJobData {
+  url: string;
+  userId: string;
+}
+
+export interface ExportJobData {
+  clipId: string;
+  sceneIndex: number;
+}
+
 const connection = new Redis({
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
@@ -45,7 +55,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
 
   createWorker(
     queueName: string,
-    processor: (jobData: any) => Promise<void>
+    processor: (jobData: AnalysisJobData | ExportJobData) => Promise<void>
   ): Worker {
     const worker = new Worker(
       queueName,

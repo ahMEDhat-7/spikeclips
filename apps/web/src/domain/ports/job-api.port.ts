@@ -1,3 +1,5 @@
+import { ScoredBlock, HeatmapSpike } from "../entities/job";
+
 export interface JobApiPort {
   createJob(url: string, userId: string): Promise<JobResponse>;
   getJob(id: string): Promise<JobResponse>;
@@ -17,8 +19,8 @@ export interface JobResponse {
   videoThumbnail?: string;
   videoDuration?: number;
   status: string;
-  scenes?: any[];
-  heatmapData?: any[];
+  scenes?: ScoredBlock[];
+  heatmapData?: HeatmapSpike[];
   errorMessage?: string;
   createdAt: string;
   completedAt?: string;
