@@ -2,6 +2,17 @@ import { JobApiPort, JobResponse } from "../../domain/ports/job-api.port";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
+interface ApiResponseError {
+  message: string;
+  statusCode?: number;
+  timestamp?: string;
+  path?: string;
+}
+
+async function parseJson<T>(res: Response): Promise<T> {
+  return res.json() as Promise<T>;
+}
+
 export class JobApiClient implements JobApiPort {
   async createJob(url: string, userId: string): Promise<JobResponse> {
     const res = await fetch(`${API_BASE}/jobs`, {
@@ -11,33 +22,33 @@ export class JobApiClient implements JobApiPort {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Failed to create job" }));
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to create job" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    return parseJson<JobResponse>(res);
   }
 
   async getJob(id: string): Promise<JobResponse> {
     const res = await fetch(`${API_BASE}/jobs/${id}`);
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Failed to get job" }));
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get job" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    return parseJson<JobResponse>(res);
   }
 
   async getJobs(userId: string): Promise<JobResponse[]> {
     const res = await fetch(`${API_BASE}/jobs?userId=${userId}`);
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Failed to get jobs" }));
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get jobs" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    return parseJson<JobResponse[]>(res);
   }
 
   async processJob(id: string): Promise<JobResponse> {
@@ -46,11 +57,11 @@ export class JobApiClient implements JobApiPort {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Failed to process job" }));
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to process job" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    return parseJson<JobResponse>(res);
   }
 
   async exportClips(
@@ -64,11 +75,11 @@ export class JobApiClient implements JobApiPort {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Failed to export clips" }));
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to export clips" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    return parseJson<{ jobId: string; clipJobIds: string[] }>(res);
   }
 }
 
