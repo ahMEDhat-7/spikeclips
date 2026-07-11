@@ -1,92 +1,49 @@
 # AGENTS.md
 
-This file provides guidance to AI coding agents (Claude Code, Cursor, Copilot, Antigravity, etc.) when working with code in this repository.
+## Project
 
-> **Scope:** This file configures agents working on the [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) repository itself. It is not meant to be copied into other projects or into a global agent configuration; the reusable assets are the skills in `skills/`, not this file.
+SpikeClip — YouTube heatmap-driven clip extraction tool. Extracts most-replayed moments using actual viewer heatmap data, reformats into vertical shorts.
 
-## Repository Overview
+## Architecture
 
-A collection of skills for Claude.ai and Claude Code for senior software engineers. Skills are packaged instructions and scripts that extend Claude and your coding agents capabilities.
+Turborepo monorepo with pnpm workspaces:
 
-## OpenCode Integration
+- `apps/web/` — Next.js 16 frontend (App Router, Tailwind 4, React 19)
+- `apps/api/` — NestJS 11 backend (health check endpoint, ready for services)
+- `packages/shared/` — Shared types (HeatmapSpike, Job, Clip, User, AlgorithmConfig)
+- `docker/` — Postgres 16 + Redis 7 for local dev
 
-OpenCode uses a **skill-driven execution model** powered by the `skill` tool and this repository's `/skills` directory.
+## Commands
 
-### Core Rules
+```bash
+# Root (via turbo)
+pnpm dev          # Start all apps in parallel
+pnpm build        # Build all apps
+pnpm lint         # Lint all apps
+pnpm test         # Test all apps
 
-- If a task matches a skill, you MUST invoke it
-- Skills are located in `skills/<skill-name>/SKILL.md`
-- Never implement directly if a skill applies
-- Always follow the skill instructions exactly (do not partially apply them)
+# Single app
+pnpm --filter @spikeclip/web dev
+pnpm --filter @spikeclip/api dev
 
-### Intent → Skill Mapping
+# Docker services
+docker compose -f docker/docker-compose.yml up -d
+```
 
-The agent should automatically map user intent to skills:
+## Key Conventions
 
-- Feature / new functionality → `spec-driven-development`, then `incremental-implementation`, `test-driven-development`
-- Planning / breakdown → `planning-and-task-breakdown`
-- Bug / failure / unexpected behavior → `debugging-and-error-recovery`
-- Code review → `code-review-and-quality`
-- Refactoring / simplification → `code-simplification`
-- API or interface design → `api-and-interface-design`
-- UI work → `frontend-ui-engineering`
+- **Package manager:** pnpm (do not use npm or yarn)
+- **TypeScript:** v7.0.2, strict mode in all packages
+- **Node:** Next.js uses Turbopack (`next dev --turbopack`)
+- **API prefix:** NestJS backend uses `/api` global prefix
+- **CORS:** Backend allows `http://localhost:3000` by default
+- **Shared code:** Import from `@spikeclip/shared` (path alias configured in both apps)
 
-### Lifecycle Mapping (Implicit Commands)
+## Algorithm Reference
 
-OpenCode does not support slash commands like `/spec` or `/plan`.
+`CreateYTShorts.py` contains the canonical spike merging algorithm (v2). This is the source of truth for the algorithm that will be ported to `packages/shared/algorithm/`. Key parameters: gap tolerance 5s, intensity delta 0.25, floor 0.40, min clip 3s, max clip 60s.
 
-Instead, the agent must internally follow this lifecycle:
+## Git Conventions
 
-- DEFINE → `spec-driven-development`
-- PLAN → `planning-and-task-breakdown`
-- BUILD → `incremental-implementation` + `test-driven-development`
-- VERIFY → `debugging-and-error-recovery`
-- REVIEW → `code-review-and-quality`
-- SHIP → `shipping-and-launch`
-
-### Execution Model
-
-For every request:
-
-1. Determine if any skill applies (even 1% chance)
-2. Invoke the appropriate skill using the `skill` tool
-3. Follow the skill workflow strictly
-4. Only proceed to implementation after required steps (spec, plan, etc.) are complete
-
-### Anti-Rationalization
-
-The following thoughts are incorrect and must be ignored:
-
-- "This is too small for a skill"
-- "I can just quickly implement this"
-- "I’ll gather context first"
-
-Correct behavior:
-
-- Always check for and use skills first
-
-This ensures OpenCode behaves similarly to Claude Code with full workflow enforcement.
-
-## Orchestration: Personas, Skills, and Commands
-
-This repo has three composable layers. They have different jobs and should not be confused:
-
-- **Skills** (`skills/<name>/SKILL.md`) — workflows with steps and exit criteria. The *how*. Mandatory hops when an intent matches.
-- **Personas** (`agents/<role>.md`) — roles with a perspective and an output format. The *who*.
-- **Slash commands** (`.claude/commands/*.md`) — user-facing entry points. The *when*. The orchestration layer.
-
-Composition rule: **the user (or a slash command) is the orchestrator. Personas do not invoke other personas.** A persona may invoke skills.
-
-The only multi-persona orchestration pattern this repo endorses is **parallel fan-out with a merge step** — used by `/ship` to run `code-reviewer`, `security-auditor`, and `test-engineer` concurrently and synthesize their reports. Do not build a "router" persona that decides which other persona to call; that's the job of slash commands and intent mapping.
-
-See [docs/agents.md](docs/agents.md) for the decision matrix and [references/orchestration-patterns.md](references/orchestration-patterns.md) for the full pattern catalog.
-
-**Claude Code interop:** the personas in `agents/` work as Claude Code subagents (auto-discovered from this plugin's `agents/` directory) and as Agent Teams teammates (referenced by name when spawning). Two platform constraints align with our rules: subagents cannot spawn other subagents, and teams cannot nest. Plugin agents silently ignore the `hooks`, `mcpServers`, and `permissionMode` frontmatter fields.
-
-## Creating a New Skill
-
-> **Before you start:** run the pre-flight checks in [CONTRIBUTING.md](CONTRIBUTING.md#before-proposing-a-new-skill), search the catalog, check open PRs (`gh pr list --state open`), confirm the idea fits [docs/skill-anatomy.md](docs/skill-anatomy.md), and justify the gap in your PR description. Most new-skill ideas overlap an existing skill or an open PR; prefer extending an existing skill over adding a near-duplicate. CONTRIBUTING.md is the single source of truth for this workflow.
-
-Skills in this repo are markdown-first: each lives at `skills/<kebab-case-name>/SKILL.md` with YAML frontmatter (`name`, `description`) and follows the section anatomy (Overview, When to Use, Process, Common Rationalizations, Red Flags, Verification). Add a `scripts/` directory only when the skill ships runnable helpers; most skills are markdown only, and there are no per-skill zip packages.
-
-For the full format, naming conventions, frontmatter rules, supporting-file thresholds, and writing principles, see [docs/skill-anatomy.md](docs/skill-anatomy.md), the single source of truth for skill structure. Do not restate that guidance here, link to it.
+- Commits: `feat:`, `fix:`, `chore:`, `docs:` prefixes
+- Review required after each change before proceeding
