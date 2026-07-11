@@ -55,3 +55,4 @@ uploads/
 
 # TypeScript
 *.tsbuildinfo
+package-lock.json

@@ -1,5 +1,5 @@
 import { Job } from "../../domain/entities/job.entity";
-import { Job as JobType, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
+import { ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 export class JobResponseDto {
   id: string;

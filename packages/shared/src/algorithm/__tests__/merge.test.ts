@@ -1,5 +1,5 @@
 import { extractTopScenes, convertSecondsToTimestamp } from "../merge";
-import { HeatmapSpike } from "../types";
+import { HeatmapSpike } from "../../types";
 
 function printScenes(label: string, scenes: ReturnType<typeof extractTopScenes>) {
   console.log(`\n${label}`);

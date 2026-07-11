@@ -37,7 +37,10 @@ export class ProcessHeatmapUseCase {
         merged,
         config.min_clip_duration,
         config.max_clip_duration,
-        config.min_intensity_cutoff
+        config.target_duration_range,
+        config.weight_peak,
+        config.weight_avg,
+        config.weight_duration_fit
       );
 
       const selected = selectTopScenes(

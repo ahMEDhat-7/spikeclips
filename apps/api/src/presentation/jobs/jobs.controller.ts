@@ -6,6 +6,7 @@ import { CreateJobDto } from "../../application/dto/create-job.dto";
 import { ExportClipsDto } from "../../application/dto/export-clips.dto";
 import { JobResponseDto } from "../../application/dto/job-response.dto";
 import { JobRepository } from "../../domain/repositories/job.repository";
+import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 
 @Controller("jobs")
 export class JobsController {
@@ -24,9 +25,7 @@ export class JobsController {
   @Get(":id")
   async findOne(@Param("id") id: string): Promise<JobResponseDto> {
     const job = await this.jobRepository.findById(id);
-    if (!job) {
-      throw new (await import("../../domain/exceptions/job-not-found.exception")).JobNotFoundException(id);
-    }
+    if (!job) throw new JobNotFoundException(id);
     return JobResponseDto.fromEntity(job);
   }
 

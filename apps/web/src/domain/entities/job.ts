@@ -1,9 +1,4 @@
-import {
-  Job as JobType,
-  ScoredBlock,
-  HeatmapSpike,
-  JobStatus,
-} from "@spikeclip/shared";
+import { ScoredBlock, HeatmapSpike, JobStatus } from "@spikeclip/shared";
 
 export interface Job {
   id: string;

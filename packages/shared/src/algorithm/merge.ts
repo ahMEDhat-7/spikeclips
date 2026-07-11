@@ -1,4 +1,4 @@
-import { HeatmapSpike, MergedBlock, ScoredBlock, AlgorithmConfig, DEFAULT_CONFIG } from "./types";
+import { HeatmapSpike, MergedBlock, ScoredBlock, AlgorithmConfig, DEFAULT_ALGORITHM_CONFIG as DEFAULT_CONFIG } from "../types";
 
 export function convertSecondsToTimestamp(seconds: number): string {
   const totalSeconds = Math.floor(seconds);
