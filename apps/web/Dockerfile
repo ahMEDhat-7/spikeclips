@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:24-slim
 WORKDIR /app
 COPY apps/web/.next ./apps/web/.next
 COPY apps/web/public ./apps/web/public

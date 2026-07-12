@@ -49,10 +49,10 @@ if ! docker compose version &> /dev/null; then
     sudo apt-get install -y -qq docker-compose-plugin
 fi
 
-# ── 6. Install Node.js 20 via NodeSource ──
-echo "[6/13] Installing Node.js 20..."
-if ! command -v node &> /dev/null || [ "$(node -v | cut -d. -f1)" != "v20" ]; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# ── 6. Install Node.js 24 via NodeSource ──
+echo "[6/13] Installing Node.js 24..."
+if ! command -v node &> /dev/null || [ "$(node -v | cut -d. -f1)" != "v24" ]; then
+    curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
     sudo apt-get install -y -qq nodejs
 fi
 echo "Node: $(node -v), npm: $(npm -v)"

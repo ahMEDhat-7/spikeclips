@@ -24,7 +24,7 @@ CPUQuota=80%
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/tmp/spikeclips-export /tmp/spikeclips-clips
+ReadWritePaths=/tmp/spikeclips-clips
 PrivateTmp=yes
 
 [Install]

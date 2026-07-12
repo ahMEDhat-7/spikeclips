@@ -26,7 +26,7 @@ SpikeClip extracts the most-replayed moments from YouTube videos using **actual 
 
 ### Prerequisites
 
-- **Node.js** ≥ 20
+- **Node.js** ≥ 24
 - **pnpm** 9.x
 - **Docker** + Docker Compose
 - **yt-dlp** — `pip install yt-dlp`
@@ -422,7 +422,7 @@ All endpoints prefixed with `/api`. Swagger docs at `/api/docs`.
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | — |
 | `REDIS_HOST` | Redis host | `localhost` |
-| `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_PORT` | Redis port | `6380` |
 | `JWT_SECRET` | JWT signing secret | — |
 | `PORT` | API server port | `3001` |
 | `FRONTEND_URL` | Frontend origin for CORS | `http://localhost:3000` |
@@ -544,7 +544,7 @@ chmod +x deploy/setup.sh
 ```
 
 **What setup.sh does:**
-- Installs Docker, Node.js 20, pnpm 9, yt-dlp, FFmpeg
+- Installs Docker, Node.js 24, pnpm 9, yt-dlp, FFmpeg
 - Creates `spikeclips` system user
 - Clones repo, installs dependencies, builds
 - Installs systemd services
