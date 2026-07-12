@@ -40,7 +40,7 @@ function DashboardContent() {
   const initialUrl = searchParams.get("url") || "";
   const { user } = useAuth();
 
-  const { job, isLoading, error, analyze } = useAnalyzeVideo();
+  const { job, isLoading, error, analyze } = useAnalyzeVideo(user?.id ?? null);
   const {
     clips,
     isExporting,

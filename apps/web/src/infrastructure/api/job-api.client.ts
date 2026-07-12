@@ -18,6 +18,7 @@ export class JobApiClient implements JobApiPort {
     const res = await fetch(`${API_BASE}/jobs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ url, userId }),
     });
 
@@ -30,7 +31,9 @@ export class JobApiClient implements JobApiPort {
   }
 
   async getJob(id: string): Promise<JobResponse> {
-    const res = await fetch(`${API_BASE}/jobs/${id}`);
+    const res = await fetch(`${API_BASE}/jobs/${id}`, {
+      credentials: "include",
+    });
 
     if (!res.ok) {
       const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get job" }));
@@ -41,7 +44,9 @@ export class JobApiClient implements JobApiPort {
   }
 
   async getJobs(userId: string): Promise<JobResponse[]> {
-    const res = await fetch(`${API_BASE}/jobs?userId=${userId}`);
+    const res = await fetch(`${API_BASE}/jobs?userId=${userId}`, {
+      credentials: "include",
+    });
 
     if (!res.ok) {
       const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get jobs" }));
@@ -54,6 +59,7 @@ export class JobApiClient implements JobApiPort {
   async processJob(id: string): Promise<JobResponse> {
     const res = await fetch(`${API_BASE}/jobs/${id}/process`, {
       method: "POST",
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -71,6 +77,7 @@ export class JobApiClient implements JobApiPort {
     const res = await fetch(`${API_BASE}/jobs/${id}/export`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ sceneIndices }),
     });
 
@@ -83,7 +90,9 @@ export class JobApiClient implements JobApiPort {
   }
 
   async getClips(jobId: string): Promise<ClipResponse[]> {
-    const res = await fetch(`${API_BASE}/clips/job/${jobId}`);
+    const res = await fetch(`${API_BASE}/clips/job/${jobId}`, {
+      credentials: "include",
+    });
 
     if (!res.ok) {
       const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get clips" }));

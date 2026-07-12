@@ -10,15 +10,17 @@ interface User {
   plan: string;
   analysesUsed: number;
   analysesLimit: number;
+  createdAt?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,44 +35,51 @@ export function useAuth() {
 
 function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("spikeclips_token");
-    if (stored) {
-      setToken(stored);
-      authApi
-        .getProfile(stored)
-        .then((profile) => {
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              plan: profile.plan,
-              analysesUsed: profile.analysesUsed,
-              analysesLimit: profile.analysesLimit,
-            });
-          } else {
-            localStorage.removeItem("spikeclips_token");
-            setToken(null);
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem("spikeclips_token");
-          setToken(null);
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: string; analysesUsed: number; analysesLimit: number; createdAt?: string }) => {
+    setUser({
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      plan: profile.plan,
+      analysesUsed: profile.analysesUsed,
+      analysesLimit: profile.analysesLimit,
+      createdAt: profile.createdAt,
+    });
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const profile = await authApi.getProfile();
+      if (profile) {
+        setUserFromProfile(profile);
+      } else {
+        setUser(null);
+      }
+    } catch {
+      setUser(null);
+    }
+  }, [setUserFromProfile]);
+
+  useEffect(() => {
+    authApi
+      .getProfile()
+      .then((profile) => {
+        if (profile) {
+          setUserFromProfile(profile);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, [setUserFromProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await authApi.login(email, password);
-    localStorage.setItem("spikeclips_token", result.accessToken);
-    setToken(result.accessToken);
     setUser({
       id: result.userId,
       email: result.email,
@@ -83,8 +92,6 @@ function useAuthProvider(): AuthContextType {
 
   const register = useCallback(async (email: string, password: string, name: string) => {
     const result = await authApi.register(email, password, name);
-    localStorage.setItem("spikeclips_token", result.accessToken);
-    setToken(result.accessToken);
     setUser({
       id: result.userId,
       email: result.email,
@@ -95,13 +102,18 @@ function useAuthProvider(): AuthContextType {
     });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("spikeclips_token");
-    setToken(null);
+  const logout = useCallback(async () => {
+    await authApi.logout();
     setUser(null);
+    window.location.href = "/login";
   }, []);
 
-  return { user, token, isLoading, login, register, logout };
+  const updateProfile = useCallback(async (data: { name?: string; email?: string }) => {
+    const updated = await authApi.updateProfile(data);
+    setUserFromProfile(updated);
+  }, [setUserFromProfile]);
+
+  return { user, isLoading, login, register, logout, updateProfile, refreshUser };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

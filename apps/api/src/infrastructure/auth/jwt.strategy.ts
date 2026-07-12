@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import { Request } from "express";
 
 interface JwtPayload {
   sub: string;
@@ -12,11 +13,18 @@ if (!jwtSecret && process.env.NODE_ENV === "production") {
   throw new Error("JWT_SECRET environment variable is required in production");
 }
 
+function extractJwtFromCookie(req: Request): string | null {
+  return req?.cookies?.access_token ?? null;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        extractJwtFromCookie,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret || "spikeclips-dev-secret-change-in-production",
     });

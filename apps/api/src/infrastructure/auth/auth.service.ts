@@ -141,4 +141,72 @@ export class AuthService {
     return user.analysesUsed < user.analysesLimit;
   }
 
+  async updateProfile(
+    userId: string,
+    data: { name?: string; email?: string }
+  ): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    plan: string;
+    analysesUsed: number;
+    analysesLimit: number;
+    createdAt: Date;
+  }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException("User not found");
+    }
+
+    if (data.email && data.email !== user.email) {
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      if (existing) {
+        throw new ConflictException("Email already in use");
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.email !== undefined && { email: data.email }),
+      },
+    });
+
+    this.logger.log(`Profile updated for user: ${updated.email}`);
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name ?? "",
+      plan: updated.plan,
+      analysesUsed: updated.analysesUsed,
+      analysesLimit: updated.analysesLimit,
+      createdAt: updated.createdAt,
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException("User not found");
+    }
+
+    const passwordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!passwordValid) {
+      throw new UnauthorizedException("Current password is incorrect");
+    }
+
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    this.logger.log(`Password changed for user: ${user.email}`);
+  }
 }

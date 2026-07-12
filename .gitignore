@@ -46,7 +46,7 @@ Thumbs.db
 apps/api/prisma/migrations/
 
 # Clips storage
-clips/
+/clips/
 temp/
 uploads/
 
