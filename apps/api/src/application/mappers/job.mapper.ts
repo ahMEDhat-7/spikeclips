@@ -1,5 +1,5 @@
 import { Job } from "../../domain/entities/job.entity";
-import { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
+import { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
 
 interface PrismaJob {
   id: string;

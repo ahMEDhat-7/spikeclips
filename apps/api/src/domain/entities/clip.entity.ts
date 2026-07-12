@@ -1,4 +1,4 @@
-import { ClipStatus } from "@spikeclip/shared";
+import { ClipStatus } from "@spikeclips/shared";
 
 export class Clip {
   constructor(

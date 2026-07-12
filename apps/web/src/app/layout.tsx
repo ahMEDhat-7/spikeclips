@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { Header } from "@/presentation/components/layout/Header";
 import { Providers } from "@/application/providers/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://spikeclip.ai"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://spikeclips.com"
   ),
   title: {
     default: "SpikeClip — Find what viewers actually rewatch",
@@ -46,8 +50,8 @@ export const metadata: Metadata = {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "SpikeClip",
-      url: "https://spikeclip.ai",
-      logo: "https://spikeclip.ai/logo.svg",
+      url: "https://spikeclips.com",
+      logo: "https://spikeclips.com/logo.svg",
     }),
   },
 };
@@ -58,7 +62,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrains.variable}`}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <ThemeProvider
           attribute="class"

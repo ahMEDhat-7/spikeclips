@@ -1,0 +1,31 @@
+[Unit]
+Description=SpikeClips API Server
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=spikeclips
+Group=spikeclips
+WorkingDirectory=/home/spikeclips/spikeclips/apps/api
+EnvironmentFile=/home/spikeclips/spikeclips/.env
+Environment=NODE_ENV=production
+Environment=UV_THREADPOOL_SIZE=4
+ExecStart=/usr/bin/env node dist/main.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Resource limits
+MemoryMax=1.5G
+CPUQuota=80%
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/tmp/spikeclips-export /tmp/spikeclips-clips
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

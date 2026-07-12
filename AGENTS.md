@@ -23,8 +23,8 @@ pnpm lint         # Lint all apps
 pnpm test         # Test all apps
 
 # Single app
-pnpm --filter @spikeclip/web dev
-pnpm --filter @spikeclip/api dev
+pnpm --filter @spikeclips/web dev
+pnpm --filter @spikeclips/api dev
 
 # Docker services
 docker compose -f docker/docker-compose.yml up -d
@@ -37,7 +37,7 @@ docker compose -f docker/docker-compose.yml up -d
 - **Node:** Next.js uses Turbopack (`next dev --turbopack`)
 - **API prefix:** NestJS backend uses `/api` global prefix
 - **CORS:** Backend allows `http://localhost:3000` by default
-- **Shared code:** Import from `@spikeclip/shared` (path alias configured in both apps)
+- **Shared code:** Import from `@spikeclips/shared` (path alias configured in both apps)
 
 ## Algorithm Reference
 

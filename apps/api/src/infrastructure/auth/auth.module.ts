@@ -5,12 +5,17 @@ import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./jwt.strategy";
 
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret && process.env.NODE_ENV === "production") {
+  throw new Error("JWT_SECRET environment variable is required in production");
+}
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || "spikeclip-dev-secret-change-in-production",
-      signOptions: { expiresIn: "7d" },
+      secret: jwtSecret || "spikeclips-dev-secret-change-in-production",
+      signOptions: { expiresIn: "15m" },
     }),
   ],
   controllers: [AuthController],

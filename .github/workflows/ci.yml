@@ -35,8 +35,8 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @spikeclip/shared test
-      - run: pnpm --filter @spikeclip/api test
+      - run: pnpm --filter @spikeclips/shared test
+      - run: pnpm --filter @spikeclips/api test
 
   build:
     name: Build

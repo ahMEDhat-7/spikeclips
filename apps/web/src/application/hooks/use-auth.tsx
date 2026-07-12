@@ -37,7 +37,7 @@ function useAuthProvider(): AuthContextType {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("spikeclip_token");
+    const stored = localStorage.getItem("spikeclips_token");
     if (stored) {
       setToken(stored);
       authApi
@@ -53,12 +53,12 @@ function useAuthProvider(): AuthContextType {
               analysesLimit: profile.analysesLimit,
             });
           } else {
-            localStorage.removeItem("spikeclip_token");
+            localStorage.removeItem("spikeclips_token");
             setToken(null);
           }
         })
         .catch(() => {
-          localStorage.removeItem("spikeclip_token");
+          localStorage.removeItem("spikeclips_token");
           setToken(null);
         })
         .finally(() => setIsLoading(false));
@@ -69,7 +69,7 @@ function useAuthProvider(): AuthContextType {
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await authApi.login(email, password);
-    localStorage.setItem("spikeclip_token", result.accessToken);
+    localStorage.setItem("spikeclips_token", result.accessToken);
     setToken(result.accessToken);
     setUser({
       id: result.userId,
@@ -83,7 +83,7 @@ function useAuthProvider(): AuthContextType {
 
   const register = useCallback(async (email: string, password: string, name: string) => {
     const result = await authApi.register(email, password, name);
-    localStorage.setItem("spikeclip_token", result.accessToken);
+    localStorage.setItem("spikeclips_token", result.accessToken);
     setToken(result.accessToken);
     setUser({
       id: result.userId,
@@ -96,7 +96,7 @@ function useAuthProvider(): AuthContextType {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("spikeclip_token");
+    localStorage.removeItem("spikeclips_token");
     setToken(null);
     setUser(null);
   }, []);

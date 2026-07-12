@@ -2,7 +2,7 @@ import {
   JobStatus,
   ScoredBlock,
   HeatmapSpike,
-} from "@spikeclip/shared";
+} from "@spikeclips/shared";
 
 export class Job {
   constructor(

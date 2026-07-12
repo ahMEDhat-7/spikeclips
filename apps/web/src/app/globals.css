@@ -3,55 +3,99 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(222.2 47.4% 11.2%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(222.2 84% 4.9%);
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+
   --radius: 0.5rem;
+
+  /* ── Light mode (default) ── */
+  --color-background: hsl(220 20% 98%);
+  --color-foreground: hsl(224 71% 4%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(224 71% 4%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(224 71% 4%);
+
+  --color-primary: hsl(354 79% 59%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(20 91% 60%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+
+  --color-muted: hsl(220 14% 96%);
+  --color-muted-foreground: hsl(220 9% 46%);
+
+  --color-accent: hsl(354 79% 59%);
+  --color-accent-foreground: hsl(0 0% 100%);
+
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(220 13% 91%);
+  --color-input: hsl(220 13% 91%);
+  --color-ring: hsl(354 79% 59%);
+
+  --color-surface: hsl(220 20% 96%);
+  --color-surface-hover: hsl(220 16% 93%);
+  --color-surface-active: hsl(220 14% 90%);
+
+  --color-chart-primary: hsl(354 79% 59%);
+  --color-chart-secondary: hsl(20 91% 60%);
+  --color-chart-accent: hsl(20 80% 55%);
+
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(20 91% 60%);
 }
 
+/* ── Dark mode ── */
 .dark {
-  --color-background: hsl(222.2 84% 4.9%);
+  --color-background: hsl(224 71% 4%);
   --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222.2 84% 4.9%);
+
+  --color-card: hsl(224 50% 8%);
   --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(222.2 84% 4.9%);
+
+  --color-popover: hsl(224 50% 8%);
   --color-popover-foreground: hsl(210 40% 98%);
-  --color-primary: hsl(210 40% 98%);
-  --color-primary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-secondary: hsl(217.2 32.6% 17.5%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(217.2 32.6% 17.5%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-accent: hsl(217.2 32.6% 17.5%);
-  --color-accent-foreground: hsl(210 40% 98%);
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(217.2 32.6% 17.5%);
-  --color-input: hsl(217.2 32.6% 17.5%);
-  --color-ring: hsl(212.7 26.8% 83.9%);
+
+  --color-primary: hsl(354 79% 65%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(20 91% 65%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+
+  --color-muted: hsl(224 30% 12%);
+  --color-muted-foreground: hsl(220 14% 60%);
+
+  --color-accent: hsl(354 79% 65%);
+  --color-accent-foreground: hsl(0 0% 100%);
+
+  --color-destructive: hsl(0 62% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(224 20% 16%);
+  --color-input: hsl(224 20% 16%);
+  --color-ring: hsl(354 79% 65%);
+
+  --color-surface: hsl(224 40% 10%);
+  --color-surface-hover: hsl(224 35% 14%);
+  --color-surface-active: hsl(224 30% 18%);
+
+  --color-chart-primary: hsl(354 79% 65%);
+  --color-chart-secondary: hsl(20 91% 65%);
+  --color-chart-accent: hsl(20 80% 60%);
+
+  --color-success: hsl(142 71% 55%);
+  --color-warning: hsl(20 91% 65%);
 }
 
 html,
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -65,12 +109,10 @@ a {
   text-decoration: none;
 }
 
-/* 4px spacing grid */
 .container {
   max-width: 1200px;
 }
 
-/* Responsive typography */
 @media (max-width: 640px) {
   html {
     font-size: 14px;

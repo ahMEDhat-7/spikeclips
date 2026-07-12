@@ -8,14 +8,6 @@ export class CreateJobDto {
   })
   @IsString()
   @IsNotEmpty()
-  @IsUrl()
+  @IsUrl({ require_tld: true })
   url!: string;
-
-  @ApiProperty({
-    description: "User ID of the requesting user",
-    example: "user-123",
-  })
-  @IsString()
-  @IsNotEmpty()
-  userId!: string;
 }

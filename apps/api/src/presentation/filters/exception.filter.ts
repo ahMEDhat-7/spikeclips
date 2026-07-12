@@ -10,6 +10,8 @@ import { Request, Response } from "express";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { InvalidUrlException } from "../../domain/exceptions/invalid-url.exception";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -24,14 +26,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      message = exception.message;
+      const res = exception.getResponse();
+      message = typeof res === "string" ? res : (res as { message?: string }).message ?? exception.message;
     } else if (exception instanceof JobNotFoundException) {
       status = HttpStatus.NOT_FOUND;
       message = exception.message;
     } else if (exception instanceof InvalidUrlException) {
       status = HttpStatus.BAD_REQUEST;
       message = exception.message;
-    } else if (exception instanceof Error) {
+    } else if (!isProduction && exception instanceof Error) {
       message = exception.message;
     }
 

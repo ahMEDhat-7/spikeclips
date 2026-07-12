@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
@@ -59,55 +65,82 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <main className="container mx-auto p-4 sm:p-6 space-y-12">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl sm:text-4xl font-bold">Simple, transparent pricing</h1>
+    <main className="space-y-16">
+      <section className="container mx-auto px-4 sm:px-6 pt-16 pb-4 text-center space-y-4">
+        <h1 className="text-3xl sm:text-4xl font-bold">
+          Simple, transparent pricing
+        </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose the plan that fits your workflow. All plans include our core heatmap analysis technology.
+          Choose the plan that fits your workflow. All plans include our core
+          heatmap analysis technology.
         </p>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {tiers.map((tier) => (
-          <Card
-            key={tier.name}
-            className={`relative flex flex-col ${
-              tier.popular ? "border-primary shadow-md" : ""
-            }`}
-          >
-            {tier.popular && (
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                Most Popular
-              </Badge>
-            )}
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl">{tier.name}</CardTitle>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl font-bold">{tier.price}</span>
-                <span className="text-muted-foreground">{tier.period}</span>
-              </div>
-              <CardDescription>{tier.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <ul className="space-y-3 flex-1">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                variant={tier.variant}
-                className="w-full mt-6"
-                asChild
-              >
-                <Link href={tier.href}>{tier.cta}</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <section className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {tiers.map((tier) => (
+            <Card
+              key={tier.name}
+              className={`relative flex flex-col ${
+                tier.popular
+                  ? "border-primary shadow-lg ring-1 ring-primary/10"
+                  : ""
+              }`}
+            >
+              {tier.popular && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  Most Popular
+                </Badge>
+              )}
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl">{tier.name}</CardTitle>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-4xl font-mono font-bold">
+                    {tier.price}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    {tier.period}
+                  </span>
+                </div>
+                <CardDescription>{tier.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <ul className="space-y-3 flex-1">
+                  {tier.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm"
+                    >
+                      <Check className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant={tier.variant}
+                  className="w-full mt-6"
+                  asChild
+                >
+                  <Link href={tier.href}>{tier.cta}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-surface py-16">
+        <div className="container mx-auto px-4 sm:px-6 text-center space-y-4">
+          <h2 className="text-2xl font-bold">Need something custom?</h2>
+          <p className="text-muted-foreground max-w-lg mx-auto">
+            For enterprise needs, API access, or custom integrations, reach out
+            to our team.
+          </p>
+          <Button variant="outline" asChild>
+            <Link href="mailto:hello@spikeclips.com">Contact us</Link>
+          </Button>
+        </div>
+      </section>
     </main>
   );
 }

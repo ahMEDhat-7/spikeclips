@@ -3,13 +3,13 @@ import { Job as BullMQJob, Worker } from "bullmq";
 import { PrismaService } from "../database/prisma.service";
 import { StorageService } from "../storage/storage.interface";
 import { randomUUID } from "crypto";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
-import { readFile, unlink, mkdir } from "fs/promises";
+import { unlink, mkdir, stat } from "fs/promises";
 import { join } from "path";
 
-const execAsync = promisify(exec);
-const TMP_DIR = "/tmp/spikeclip-export";
+const execFileAsync = promisify(execFile);
+const TMP_DIR = "/tmp/spikeclips-export";
 
 interface ClipExportJobData {
   jobId: string;
@@ -53,42 +53,58 @@ export function createClipWorker(
 
         const duration = endTime - startTime;
 
-        await execAsync(
-          `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" ` +
-            `--download-sections "*${startTime}-${endTime}" ` +
-            `--force-keyframes-at-cuts ` +
-            `-o "${tmpInput}" "${videoUrl}"`
-        );
+        await execFileAsync("yt-dlp", [
+          "-f",
+          "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+          "--download-sections",
+          `*${startTime}-${endTime}`,
+          "--force-keyframes-at-cuts",
+          "-o",
+          tmpInput,
+          videoUrl,
+        ]);
 
         if (vertical) {
-          await execAsync(
-            `ffmpeg -y -i "${tmpInput}" ` +
-              `-vf "crop=ih*9/16:ih,scale=1080:1920" ` +
-              `-c:v libx264 -c:a aac ` +
-              `--force-keyframes-at-cuts ` +
-              `"${tmpOutput}"`
-          );
+          await execFileAsync("ffmpeg", [
+            "-y",
+            "-i",
+            tmpInput,
+            "-vf",
+            "crop=ih*9/16:ih,scale=1080:1920",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "--force-keyframes-at-cuts",
+            tmpOutput,
+          ]);
         } else {
-          await execAsync(
-            `ffmpeg -y -i "${tmpInput}" ` +
-              `-t ${duration} ` +
-              `-c:v libx264 -c:a aac ` +
-              `--force-keyframes-at-cuts ` +
-              `"${tmpOutput}"`
-          );
+          await execFileAsync("ffmpeg", [
+            "-y",
+            "-i",
+            tmpInput,
+            "-t",
+            String(duration),
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "--force-keyframes-at-cuts",
+            tmpOutput,
+          ]);
         }
 
-        const fileBuffer = await readFile(tmpOutput);
         const storageKey = `clips/${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
-        await storage.upload(fileBuffer, storageKey, "video/mp4");
+        await storage.uploadFromFile(tmpOutput, storageKey, "video/mp4");
         const fileUrl = await storage.getSignedUrl(storageKey);
+        const fileSize = (await stat(tmpOutput)).size;
 
         await prisma.clip.update({
           where: { id: clipId },
           data: {
             status: "completed",
             fileUrl,
-            fileSize: fileBuffer.length,
+            fileSize,
             duration,
             completedAt: new Date(),
           },
@@ -108,7 +124,10 @@ export function createClipWorker(
         });
       }
     },
-    { connection: connectionOptions, concurrency: 3 }
+    {
+      connection: connectionOptions,
+      concurrency: parseInt(process.env.CLIP_WORKER_CONCURRENCY || "3"),
+    }
   );
 
   worker.on("failed", (job, err) => {

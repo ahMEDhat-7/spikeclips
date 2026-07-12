@@ -1,12 +1,14 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { HealthService } from "./health.service";
+import { Public } from "../infrastructure/auth/jwt-auth.guard";
 
 @ApiTags("Health")
 @Controller("health")
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: "Health check", description: "Returns API status, timestamp, and uptime." })
   @ApiResponse({

@@ -2,6 +2,9 @@ import { Injectable, UnauthorizedException, ConflictException, Logger } from "@n
 import { JwtService } from "@nestjs/jwt";
 import { randomUUID } from "crypto";
 import { PrismaService } from "../database/prisma.service";
+import * as bcrypt from "bcrypt";
+
+const BCRYPT_ROUNDS = 12;
 
 @Injectable()
 export class AuthService {
@@ -31,12 +34,13 @@ export class AuthService {
     }
 
     const userId = randomUUID();
-    const hashedPassword = await this.hashPassword(password);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     const user = await this.prisma.user.create({
       data: {
         id: userId,
         email,
+        passwordHash,
         name,
         plan: "free",
         analysesUsed: 0,
@@ -76,6 +80,11 @@ export class AuthService {
   }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordValid) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -132,8 +141,4 @@ export class AuthService {
     return user.analysesUsed < user.analysesLimit;
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    const bcrypt = await import("bcrypt");
-    return bcrypt.hash(password, 12);
-  }
 }

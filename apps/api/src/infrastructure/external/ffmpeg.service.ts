@@ -1,9 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import { VideoProcessor } from "../../domain/services/video-processor";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class FfmpegService implements VideoProcessor {
@@ -21,13 +21,21 @@ export class FfmpegService implements VideoProcessor {
 
     const duration = endTime - startTime;
 
-    await execAsync(
-      `ffmpeg -y -ss ${startTime} -i "${inputPath}" ` +
-        `-t ${duration} ` +
-        `-c:v libx264 -c:a aac ` +
-        `--force-keyframes-at-cuts ` +
-        `"${outputPath}"`
-    );
+    await execFileAsync("ffmpeg", [
+      "-y",
+      "-ss",
+      String(startTime),
+      "-i",
+      inputPath,
+      "-t",
+      String(duration),
+      "-c:v",
+      "libx264",
+      "-c:a",
+      "aac",
+      "--force-keyframes-at-cuts",
+      outputPath,
+    ]);
   }
 
   async reformatToVertical(
@@ -44,20 +52,35 @@ export class FfmpegService implements VideoProcessor {
 
     const duration = endTime - startTime;
 
-    await execAsync(
-      `ffmpeg -y -ss ${startTime} -i "${inputPath}" ` +
-        `-t ${duration} ` +
-        `-vf "crop=ih*9/16:ih,scale=${width}:${height}" ` +
-        `-c:v libx264 -c:a aac ` +
-        `--force-keyframes-at-cuts ` +
-        `"${outputPath}"`
-    );
+    await execFileAsync("ffmpeg", [
+      "-y",
+      "-ss",
+      String(startTime),
+      "-i",
+      inputPath,
+      "-t",
+      String(duration),
+      "-vf",
+      `crop=ih*9/16:ih,scale=${width}:${height}`,
+      "-c:v",
+      "libx264",
+      "-c:a",
+      "aac",
+      "--force-keyframes-at-cuts",
+      outputPath,
+    ]);
   }
 
   async getDuration(filePath: string): Promise<number> {
-    const { stdout } = await execAsync(
-      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`
-    );
+    const { stdout } = await execFileAsync("ffprobe", [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      filePath,
+    ]);
     return parseFloat(stdout.trim());
   }
 }

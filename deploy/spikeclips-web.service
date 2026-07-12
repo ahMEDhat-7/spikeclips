@@ -1,0 +1,29 @@
+[Unit]
+Description=SpikeClips Web Server
+After=network.target spikeclips-api.service
+
+[Service]
+Type=simple
+User=spikeclips
+Group=spikeclips
+WorkingDirectory=/home/spikeclips/spikeclips/apps/web
+EnvironmentFile=/home/spikeclips/spikeclips/.env
+Environment=NODE_ENV=production
+Environment=UV_THREADPOOL_SIZE=4
+ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start -p 3000
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Resource limits
+MemoryMax=1G
+CPUQuota=60%
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

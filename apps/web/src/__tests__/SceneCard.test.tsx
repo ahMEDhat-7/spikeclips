@@ -32,8 +32,10 @@ describe("SceneCard", () => {
     render(
       <SceneCard scene={mockScene} index={0} isSelected={false} onToggle={() => {}} />
     );
-    expect(screen.getByText(/Peak: 85%/)).toBeInTheDocument();
-    expect(screen.getByText(/Score: 0.78/)).toBeInTheDocument();
+    expect(screen.getByText("Peak:")).toBeInTheDocument();
+    expect(screen.getByText("85%")).toBeInTheDocument();
+    expect(screen.getByText("Score:")).toBeInTheDocument();
+    expect(screen.getByText("0.78")).toBeInTheDocument();
   });
 
   it("calls onToggle when clicked", () => {

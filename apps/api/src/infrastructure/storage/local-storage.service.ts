@@ -1,24 +1,45 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Injectable, Logger, ForbiddenException } from "@nestjs/common";
+import { writeFile, readFile, mkdir, stat } from "fs/promises";
+import { join, resolve } from "path";
 import { StorageService } from "./storage.interface";
-import { randomBytes, createHmac } from "crypto";
+import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 
-const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclip-clips";
-const SIGNING_SECRET = process.env.CLIP_SIGNING_SECRET || "spikeclip-dev-signing-secret";
+const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
+const SIGNING_SECRET = process.env.CLIP_SIGNING_SECRET || "spikeclips-dev-signing-secret";
 
 @Injectable()
 export class LocalStorageService implements StorageService {
   private readonly logger = new Logger(LocalStorageService.name);
 
   async upload(file: Buffer, key: string, _contentType: string): Promise<string> {
-    const dir = join(CLIPS_DIR, key.split("/").slice(0, -1).join("/"));
+    const filePath = join(CLIPS_DIR, key);
+    const resolved = resolve(filePath);
+    if (!resolved.startsWith(resolve(CLIPS_DIR))) {
+      throw new ForbiddenException("Invalid storage key");
+    }
+
+    const dir = resolved.substring(0, resolved.lastIndexOf("/"));
+    await mkdir(dir, { recursive: true });
+    await writeFile(resolved, file);
+
+    this.logger.log(`Stored file: ${resolved} (${file.length} bytes)`);
+    return key;
+  }
+
+  async uploadFromFile(filePath: string, key: string, _contentType: string): Promise<string> {
+    const destPath = join(CLIPS_DIR, key);
+    const resolvedDest = resolve(destPath);
+    if (!resolvedDest.startsWith(resolve(CLIPS_DIR))) {
+      throw new ForbiddenException("Invalid storage key");
+    }
+
+    const dir = resolvedDest.substring(0, resolvedDest.lastIndexOf("/"));
     await mkdir(dir, { recursive: true });
 
-    const filePath = join(CLIPS_DIR, key);
-    await writeFile(filePath, file);
+    const fileBuffer = await readFile(filePath);
+    await writeFile(resolvedDest, fileBuffer);
 
-    this.logger.log(`Stored file: ${filePath} (${file.length} bytes)`);
+    this.logger.log(`Stored file from ${filePath}: ${resolvedDest} (${fileBuffer.length} bytes)`);
     return key;
   }
 
@@ -27,7 +48,7 @@ export class LocalStorageService implements StorageService {
     const signature = createHmac("sha256", SIGNING_SECRET)
       .update(`${key}:${expires}`)
       .digest("hex")
-      .slice(0, 16);
+      .slice(0, 32);
 
     const baseUrl = process.env.CLIPS_BASE_URL || `http://localhost:${process.env.PORT || 3001}/api`;
     return `${baseUrl}/clips/download/${encodeURIComponent(key)}?expires=${expires}&sig=${signature}`;
@@ -39,8 +60,12 @@ export class LocalStorageService implements StorageService {
     const expected = createHmac("sha256", SIGNING_SECRET)
       .update(`${key}:${expires}`)
       .digest("hex")
-      .slice(0, 16);
+      .slice(0, 32);
 
-    return sig === expected;
+    try {
+      return timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"));
+    } catch {
+      return false;
+    }
   }
 }

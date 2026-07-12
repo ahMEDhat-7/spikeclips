@@ -3,10 +3,9 @@ import {
   Post,
   Get,
   Body,
-  UseGuards,
-  Request,
   HttpCode,
   HttpStatus,
+  Request,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,13 +18,14 @@ import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { AuthResponseDto } from "./dto/auth-response.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
-import { JwtAuthGuard } from "./jwt-auth.guard";
+import { Public } from "./jwt-auth.guard";
 
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Register a new account", description: "Creates a new user account and returns a JWT token." })
@@ -36,6 +36,7 @@ export class AuthController {
     return this.authService.register(dto.email, dto.password, dto.name);
   }
 
+  @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login", description: "Authenticates user and returns a JWT token." })
@@ -46,7 +47,6 @@ export class AuthController {
   }
 
   @Get("me")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get current user", description: "Returns the authenticated user's profile." })
   @ApiResponse({ status: 200, description: "User profile", type: UserResponseDto })

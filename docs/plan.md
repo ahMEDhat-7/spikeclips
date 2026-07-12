@@ -125,7 +125,7 @@ _Note:_ the Team tier (batch/agency) is real future upside but is out of scope f
 **Monorepo structure:**
 
 ```
-spikeclip/
+spikeclips/
 ├── apps/
 │   ├── web/                 # Next.js 16 frontend
 │   │   ├── src/app/         # App Router pages

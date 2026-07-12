@@ -1,8 +1,12 @@
 import { Logger } from "@nestjs/common";
 import { Job as BullMQJob, Worker } from "bullmq";
-import { extractTopScenes } from "@spikeclip/shared";
+import { extractTopScenes } from "@spikeclips/shared";
 import { PrismaService } from "../database/prisma.service";
 import { Prisma } from "@prisma/client";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
 
 interface HeatmapJobData {
   jobId: string;
@@ -31,13 +35,11 @@ export function createHeatmapWorker(prisma: PrismaService): Worker {
           data: { status: "processing" },
         });
 
-        const { exec } = await import("child_process");
-        const { promisify } = await import("util");
-        const execAsync = promisify(exec);
-
-        const { stdout } = await execAsync(
-          `yt-dlp -j --no-download "${url}"`
-        );
+        const { stdout } = await execFileAsync("yt-dlp", [
+          "-j",
+          "--no-download",
+          url,
+        ]);
         const metadata = JSON.parse(stdout);
         const heatmap = (metadata.heatmap ?? []) as Array<{
           start_time: number;
@@ -76,7 +78,10 @@ export function createHeatmapWorker(prisma: PrismaService): Worker {
         });
       }
     },
-    { connection: connectionOptions, concurrency: 5 }
+    {
+      connection: connectionOptions,
+      concurrency: parseInt(process.env.HEATMAP_WORKER_CONCURRENCY || "5"),
+    }
   );
 
   worker.on("failed", (job, err) => {

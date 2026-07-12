@@ -1,4 +1,4 @@
-import { PlanTier } from "@spikeclip/shared";
+import { PlanTier } from "@spikeclips/shared";
 
 export class User {
   constructor(

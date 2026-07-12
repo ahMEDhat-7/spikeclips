@@ -1,7 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-import { ThrottlerModule } from "@nestjs/throttler";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./presentation/filters/exception.filter";
 import { LoggingInterceptor } from "./presentation/interceptors/logging.interceptor";
@@ -23,9 +22,16 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")
+    .split(",")
+    .map((o) => o.trim());
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    maxAge: 86400,
   });
 
   const config = new DocumentBuilder()

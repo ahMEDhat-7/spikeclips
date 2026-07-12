@@ -1,4 +1,4 @@
-import { HeatmapSpike } from "@spikeclip/shared";
+import { HeatmapSpike } from "@spikeclips/shared";
 
 export const VIDEO_EXTRACTOR = "VIDEO_EXTRACTOR";
 

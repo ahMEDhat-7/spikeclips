@@ -3,9 +3,8 @@ node_modules
 dist
 .git
 .gitignore
-*.md
+.dockerignore
 .env
 .env.*
 docker/
-apps/api/dist
-apps/web/.next
+*.md

@@ -20,20 +20,21 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <img src="/logo.svg" alt="" className="h-7 w-7" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+            <img src="/logo.svg" alt="" className="h-4 w-4" />
+          </div>
           <span>
             <span className="text-primary">Spike</span>
             <span className="text-muted-foreground">Clip</span>
           </span>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           <Link
-            href="/dashboard"
+            href="/features"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Dashboard
+            Features
           </Link>
           <Link
             href="/pricing"
@@ -46,11 +47,27 @@ export function Header() {
             <>
               {user ? (
                 <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className="text-xs">
-                    {user.plan === "free" ? `${user.analysesUsed}/${user.analysesLimit}` : user.plan}
+                  <Link
+                    href="/dashboard"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <div className="h-4 w-px bg-border" />
+                  <Badge variant="secondary" className="text-xs font-mono">
+                    {user.plan === "free"
+                      ? `${user.analysesUsed}/${user.analysesLimit}`
+                      : user.plan}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">{user.name || user.email}</span>
-                  <Button variant="ghost" size="icon" onClick={logout} aria-label="Logout">
+                  <span className="text-sm text-muted-foreground">
+                    {user.name || user.email}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={logout}
+                    aria-label="Logout"
+                  >
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </div>
@@ -83,7 +100,6 @@ export function Header() {
           )}
         </nav>
 
-        {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
@@ -91,19 +107,22 @@ export function Header() {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
         >
-          {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {mobileOpen ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <Menu className="h-4 w-4" />
+          )}
         </Button>
       </div>
 
-      {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t bg-background px-4 py-4 space-y-3">
           <Link
-            href="/dashboard"
+            href="/features"
             className="block text-sm font-medium text-muted-foreground hover:text-foreground"
             onClick={() => setMobileOpen(false)}
           >
-            Dashboard
+            Features
           </Link>
           <Link
             href="/pricing"
@@ -117,10 +136,19 @@ export function Header() {
             <>
               {user ? (
                 <div className="space-y-2 pt-2 border-t">
-                  <div className="flex items-center gap-2">
+                  <Link
+                    href="/dashboard"
+                    className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <div className="flex items-center gap-2 pt-1">
                     <span className="text-sm">{user.name || user.email}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {user.plan === "free" ? `${user.analysesUsed}/${user.analysesLimit}` : user.plan}
+                    <Badge variant="secondary" className="text-xs font-mono">
+                      {user.plan === "free"
+                        ? `${user.analysesUsed}/${user.analysesLimit}`
+                        : user.plan}
                     </Badge>
                   </div>
                   <Button
@@ -138,11 +166,26 @@ export function Header() {
                 </div>
               ) : (
                 <div className="space-y-2 pt-2 border-t">
-                  <Button asChild variant="ghost" size="sm" className="w-full justify-start">
-                    <Link href="/login" onClick={() => setMobileOpen(false)}>Sign In</Link>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Sign In
+                    </Link>
                   </Button>
                   <Button asChild size="sm" className="w-full">
-                    <Link href="/register" onClick={() => setMobileOpen(false)}>Sign Up</Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
                   </Button>
                 </div>
               )}
