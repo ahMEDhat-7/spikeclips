@@ -4,4 +4,7 @@ export {
   capAndScoreBlocks,
   selectTopScenes,
   extractTopScenes,
+  validateAlgorithmConfig,
+  normalizeHeatmapValues,
+  AlgorithmConfigError,
 } from "./merge";

@@ -5,13 +5,15 @@ import { useSceneSelection } from "@/application/hooks/use-scene-selection";
 import { SceneCard } from "./SceneCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface SceneListProps {
   scenes: ScoredBlock[];
-  onExport?: (selected: ScoredBlock[]) => void;
+  onExport?: (selectedIndices: number[]) => void;
+  isExporting?: boolean;
 }
 
-export function SceneList({ scenes, onExport }: SceneListProps) {
+export function SceneList({ scenes, onExport, isExporting }: SceneListProps) {
   const {
     selectedIndices,
     selectedScenes,
@@ -60,8 +62,18 @@ export function SceneList({ scenes, onExport }: SceneListProps) {
               {totalDuration.toFixed(1)}s total
             </span>
           </div>
-          <Button onClick={() => onExport?.(selectedScenes)}>
-            Export {selectedIndices.size} Clips
+          <Button
+            onClick={() => onExport?.(Array.from(selectedIndices))}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              `Export ${selectedIndices.size} Clips`
+            )}
           </Button>
         </div>
       )}

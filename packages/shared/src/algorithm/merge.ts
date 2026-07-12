@@ -1,4 +1,90 @@
-import { HeatmapSpike, MergedBlock, ScoredBlock, AlgorithmConfig, DEFAULT_ALGORITHM_CONFIG as DEFAULT_CONFIG } from "../types";
+import {
+  HeatmapSpike,
+  MergedBlock,
+  ScoredBlock,
+  AlgorithmConfig,
+  DEFAULT_ALGORITHM_CONFIG as DEFAULT_CONFIG,
+} from "../types";
+
+export class AlgorithmConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AlgorithmConfigError";
+  }
+}
+
+export function validateAlgorithmConfig(cfg: Partial<AlgorithmConfig>): void {
+  const c = { ...DEFAULT_CONFIG, ...cfg };
+
+  if (c.gap_tolerance < 0) {
+    throw new AlgorithmConfigError(`gap_tolerance must be >= 0, got ${c.gap_tolerance}`);
+  }
+  if (c.intensity_tolerance < 0 || c.intensity_tolerance > 1) {
+    throw new AlgorithmConfigError(
+      `intensity_tolerance must be in [0, 1], got ${c.intensity_tolerance}`
+    );
+  }
+  if (c.min_intensity_cutoff < 0 || c.min_intensity_cutoff > 1) {
+    throw new AlgorithmConfigError(
+      `min_intensity_cutoff must be in [0, 1], got ${c.min_intensity_cutoff}`
+    );
+  }
+  if (c.min_clip_duration <= 0) {
+    throw new AlgorithmConfigError(
+      `min_clip_duration must be > 0, got ${c.min_clip_duration}`
+    );
+  }
+  if (c.max_clip_duration < c.min_clip_duration) {
+    throw new AlgorithmConfigError(
+      `max_clip_duration (${c.max_clip_duration}) must be >= min_clip_duration (${c.min_clip_duration})`
+    );
+  }
+  if (c.target_duration_range[0] > c.target_duration_range[1]) {
+    throw new AlgorithmConfigError(
+      `target_duration_range[0] (${c.target_duration_range[0]}) must be <= target_duration_range[1] (${c.target_duration_range[1]})`
+    );
+  }
+  if (c.top_n < 1) {
+    throw new AlgorithmConfigError(`top_n must be >= 1, got ${c.top_n}`);
+  }
+  if (c.min_spacing < 0) {
+    throw new AlgorithmConfigError(`min_spacing must be >= 0, got ${c.min_spacing}`);
+  }
+}
+
+export function normalizeHeatmapValues(spikes: HeatmapSpike[]): HeatmapSpike[] {
+  if (!spikes.length) return spikes;
+
+  let maxVal = -Infinity;
+  let hasInvalid = false;
+  for (const s of spikes) {
+    const v = s.value;
+    if (!Number.isFinite(v)) {
+      hasInvalid = true;
+    } else if (v > maxVal) {
+      maxVal = v;
+    }
+  }
+
+  if (hasInvalid || maxVal <= 0) {
+    return spikes.map((s) => ({
+      ...s,
+      value: Number.isFinite(s.value) ? Math.max(0, Math.min(1, s.value)) : 0,
+    }));
+  }
+
+  if (maxVal > 1.0) {
+    return spikes.map((s) => ({
+      ...s,
+      value: Number.isFinite(s.value) ? Math.max(0, s.value / maxVal) : 0,
+    }));
+  }
+
+  return spikes.map((s) => ({
+    ...s,
+    value: Number.isFinite(s.value) ? Math.max(0, Math.min(1, s.value)) : 0,
+  }));
+}
 
 export function convertSecondsToTimestamp(seconds: number): string {
   const totalSeconds = Math.floor(seconds);
@@ -18,14 +104,21 @@ export function mergeHeatmapSpikes(
   intensityTolerance: number = DEFAULT_CONFIG.intensity_tolerance,
   minIntensityCutoff: number = DEFAULT_CONFIG.min_intensity_cutoff
 ): MergedBlock[] {
-  const valid = rawSpikes.filter((s) => "start_time" in s && "end_time" in s);
+  const valid = rawSpikes.filter(
+    (s) =>
+      s.start_time != null &&
+      s.end_time != null &&
+      Number.isFinite(s.start_time) &&
+      Number.isFinite(s.end_time) &&
+      s.end_time > s.start_time
+  );
   if (!valid.length) return [];
 
   const chronological = [...valid].sort((a, b) => a.start_time - b.start_time);
   const blocks: MergedBlock[] = [];
 
   for (const seg of chronological) {
-    const value = seg.value ?? 0.0;
+    const value = Number.isFinite(seg.value) ? Math.max(0, Math.min(1, seg.value)) : 0;
     const duration = Math.max(seg.end_time - seg.start_time, 0.0);
 
     if (!blocks.length) {
@@ -49,11 +142,14 @@ export function mergeHeatmapSpikes(
     const floorOk = value >= minIntensityCutoff && prev.last_value >= minIntensityCutoff;
 
     if (timeGapOk && (intensityOk || floorOk)) {
+      const overlap = Math.max(0, prev.end_time - seg.start_time);
+      const addedDuration = Math.max(0, duration - overlap);
+
       prev.end_time = Math.max(prev.end_time, seg.end_time);
       prev.peak_intensity = Math.max(prev.peak_intensity, value);
       prev.last_value = value;
-      prev.weighted_sum += value * duration;
-      prev.total_duration += duration;
+      prev.weighted_sum += value * addedDuration;
+      prev.total_duration += addedDuration;
       prev.segments.push(seg);
       if (!intensityOk && floorOk) {
         prev.used_floor_override = true;
@@ -78,17 +174,35 @@ export function mergeHeatmapSpikes(
 function bestSubwindow(
   segments: HeatmapSpike[],
   maxClipDuration: number
-): { start_time: number; end_time: number; peak_intensity: number; avg_intensity: number; segments: HeatmapSpike[] } | null {
-  let best: { start_time: number; end_time: number; peak_intensity: number; avg_intensity: number; segments: HeatmapSpike[] } | null = null;
+): {
+  start_time: number;
+  end_time: number;
+  peak_intensity: number;
+  avg_intensity: number;
+  segments: HeatmapSpike[];
+} | null {
+  if (!segments.length) return null;
+
+  let best: {
+    start_time: number;
+    end_time: number;
+    peak_intensity: number;
+    avg_intensity: number;
+    segments: HeatmapSpike[];
+  } | null = null;
+  let bestCombined = -1;
   let left = 0;
   let windowWeighted = 0.0;
   let windowDuration = 0.0;
+  let windowPeak = 0.0;
 
   for (let right = 0; right < segments.length; right++) {
     const seg = segments[right];
     const segDur = seg.end_time - seg.start_time;
-    windowWeighted += (seg.value ?? 0.0) * segDur;
+    const segVal = Number.isFinite(seg.value) ? seg.value : 0;
+    windowWeighted += segVal * segDur;
     windowDuration += segDur;
+    if (segVal > windowPeak) windowPeak = segVal;
 
     while (
       segments[right].end_time - segments[left].start_time > maxClipDuration &&
@@ -96,20 +210,31 @@ function bestSubwindow(
     ) {
       const lseg = segments[left];
       const lsegDur = lseg.end_time - lseg.start_time;
-      windowWeighted -= (lseg.value ?? 0.0) * lsegDur;
+      const lsegVal = Number.isFinite(lseg.value) ? lseg.value : 0;
+      windowWeighted -= lsegVal * lsegDur;
       windowDuration -= lsegDur;
       left++;
+
+      if (left <= right) {
+        let newPeak = 0;
+        for (let k = left; k <= right; k++) {
+          const v = Number.isFinite(segments[k].value) ? segments[k].value : 0;
+          if (v > newPeak) newPeak = v;
+        }
+        windowPeak = newPeak;
+      }
     }
 
     const span = segments[right].end_time - segments[left].start_time;
     if (span <= maxClipDuration && windowDuration > 0) {
       const avg = windowWeighted / windowDuration;
-      const peak = Math.max(...segments.slice(left, right + 1).map((s) => s.value ?? 0.0));
-      if (!best || avg > best.avg_intensity) {
+      const combined = 0.6 * avg + 0.4 * windowPeak;
+      if (!best || combined > bestCombined) {
+        bestCombined = combined;
         best = {
           start_time: segments[left].start_time,
           end_time: segments[right].end_time,
-          peak_intensity: peak,
+          peak_intensity: windowPeak,
           avg_intensity: avg,
           segments: segments.slice(left, right + 1),
         };
@@ -133,10 +258,10 @@ export function capAndScoreBlocks(
   const results: ScoredBlock[] = [];
 
   for (const block of mergedBlocks) {
-    const duration = block.end_time - block.start_time;
-    const avgIntensity = block.total_duration
-      ? block.weighted_sum / block.total_duration
-      : block.peak_intensity;
+    const avgIntensity =
+      block.total_duration > 0
+        ? block.weighted_sum / block.total_duration
+        : block.peak_intensity;
 
     let start: number;
     let end: number;
@@ -144,7 +269,9 @@ export function capAndScoreBlocks(
     let avg: number;
     let capped: boolean;
 
-    if (duration > maxClipDuration) {
+    const blockDuration = block.end_time - block.start_time;
+
+    if (blockDuration > maxClipDuration) {
       const sub = bestSubwindow(block.segments, maxClipDuration);
       if (!sub) continue;
       start = sub.start_time;
@@ -162,6 +289,7 @@ export function capAndScoreBlocks(
 
     const finalDuration = end - start;
     if (finalDuration < minClipDuration) continue;
+    if (peak <= 0) continue;
 
     let durationFit: number;
     if (finalDuration < lo) {
@@ -218,10 +346,13 @@ export function extractTopScenes(
   rawSpikes: HeatmapSpike[],
   config: Partial<AlgorithmConfig> = {}
 ): ScoredBlock[] {
+  validateAlgorithmConfig(config);
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
+  const normalized = normalizeHeatmapValues(rawSpikes);
+
   const merged = mergeHeatmapSpikes(
-    rawSpikes,
+    normalized,
     cfg.gap_tolerance,
     cfg.intensity_tolerance,
     cfg.min_intensity_cutoff

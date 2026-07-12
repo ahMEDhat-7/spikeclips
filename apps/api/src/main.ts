@@ -1,9 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./presentation/filters/exception.filter";
 import { LoggingInterceptor } from "./presentation/interceptors/logging.interceptor";
+import { startWorkers, stopWorkers } from "./infrastructure/workers";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -34,7 +36,9 @@ async function bootstrap() {
     )
     .setVersion("0.1.0")
     .addTag("Health", "API health checks")
+    .addTag("Auth", "User authentication and registration")
     .addTag("Jobs", "Video analysis jobs — create, process, export clips")
+    .addTag("Clips", "Clip download and management")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -44,5 +48,25 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`API running on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/api/docs`);
+
+  try {
+    const { PrismaService } = await import("./infrastructure/database/prisma.service");
+    const prisma = app.get(PrismaService);
+    const storage = app.get("STORAGE_SERVICE");
+    startWorkers(prisma, storage);
+  } catch (err) {
+    console.warn("Failed to start workers (Redis may be unavailable):", err instanceof Error ? err.message : err);
+  }
 }
+
+process.on("SIGTERM", async () => {
+  await stopWorkers();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  await stopWorkers();
+  process.exit(0);
+});
+
 bootstrap();

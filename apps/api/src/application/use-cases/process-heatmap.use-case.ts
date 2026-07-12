@@ -1,11 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject } from "@nestjs/common";
 import {
   mergeHeatmapSpikes,
   capAndScoreBlocks,
   selectTopScenes,
   DEFAULT_ALGORITHM_CONFIG,
 } from "@spikeclip/shared";
-import { JobRepository } from "../../domain/repositories/job.repository";
+import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { JobResponseDto } from "../dto/job-response.dto";
 
@@ -13,7 +13,7 @@ import { JobResponseDto } from "../dto/job-response.dto";
 export class ProcessHeatmapUseCase {
   private readonly logger = new Logger(ProcessHeatmapUseCase.name);
 
-  constructor(private readonly jobRepository: JobRepository) {}
+  constructor(@Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository) {}
 
   async execute(jobId: string): Promise<JobResponseDto> {
     this.logger.log(`Processing heatmap for job ${jobId}`);

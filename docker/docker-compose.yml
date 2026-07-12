@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: spikeclip-postgres
     restart: unless-stopped
     ports:
@@ -18,7 +18,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: spikeclip-redis
     restart: unless-stopped
     ports:
@@ -31,6 +31,46 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    container_name: spikeclip-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://spikeclip:spikeclip_dev@postgres:5432/spikeclip
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      JWT_SECRET: change-this-in-production
+      CLIPS_DIR: /tmp/spikeclip-clips
+      CLIPS_BASE_URL: http://localhost:3001/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - clips_data:/tmp/spikeclip-clips
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    container_name: spikeclip-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      api:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:
+  clips_data:

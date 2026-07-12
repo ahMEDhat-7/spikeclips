@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import { HeatmapSpike, ScoredBlock } from "@/domain/entities/job";
 
@@ -93,11 +93,16 @@ export function HeatmapChart({
             strokeWidth={2}
           />
           {scenes.map((scene, i) => (
-            <ReferenceLine
+            <ReferenceArea
               key={i}
-              x={formatTime(scene.start_time)}
+              x1={formatTime(scene.start_time)}
+              x2={formatTime(scene.end_time)}
+              fill="var(--destructive)"
+              fillOpacity={0.12}
               stroke="var(--destructive)"
-              strokeDasharray="3 3"
+              strokeOpacity={0.4}
+              strokeWidth={1}
+              strokeDasharray="4 2"
               onClick={() => onSceneClick?.(scene)}
               style={{ cursor: "pointer" }}
             />

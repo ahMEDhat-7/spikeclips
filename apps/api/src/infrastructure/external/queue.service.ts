@@ -1,6 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { Queue, Worker } from "bullmq";
-import { Redis } from "ioredis";
 import { QueueService } from "../../domain/services/queue";
 
 export interface AnalysisJobData {
@@ -13,11 +12,11 @@ export interface ExportJobData {
   sceneIndex: number;
 }
 
-const connection = new Redis({
+const connectionOptions = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
   maxRetriesPerRequest: null,
-});
+};
 
 @Injectable()
 export class BullMQQueueService implements QueueService, OnModuleDestroy {
@@ -26,8 +25,8 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly exportQueue: Queue;
 
   constructor() {
-    this.analysisQueue = new Queue("analysis", { connection });
-    this.exportQueue = new Queue("export", { connection });
+    this.analysisQueue = new Queue("analysis", { connection: connectionOptions });
+    this.exportQueue = new Queue("export", { connection: connectionOptions });
     this.logger.log("Queues initialized");
   }
 
@@ -64,7 +63,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
         await processor(job.data);
         this.logger.log(`Completed ${queueName} job ${job.id}`);
       },
-      { connection }
+      { connection: connectionOptions }
     );
 
     worker.on("failed", (job, err) => {
@@ -75,6 +74,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await connection.quit();
+    await this.analysisQueue.close();
+    await this.exportQueue.close();
   }
 }

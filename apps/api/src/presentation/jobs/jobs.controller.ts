@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   Query,
+  Inject,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,8 +20,10 @@ import { ExportClipsUseCase } from "../../application/use-cases/export-clips.use
 import { CreateJobDto } from "../../application/dto/create-job.dto";
 import { ExportClipsDto } from "../../application/dto/export-clips.dto";
 import { JobResponseDto } from "../../application/dto/job-response.dto";
-import { JobRepository } from "../../domain/repositories/job.repository";
+import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
+import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { ClipResponseDto } from "../clips/dto/clip-response.dto";
 
 @ApiTags("Jobs")
 @Controller("jobs")
@@ -29,7 +32,8 @@ export class JobsController {
     private readonly createJobUseCase: CreateJobUseCase,
     private readonly processHeatmapUseCase: ProcessHeatmapUseCase,
     private readonly exportClipsUseCase: ExportClipsUseCase,
-    private readonly jobRepository: JobRepository
+    @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   @Post()
@@ -58,6 +62,33 @@ export class JobsController {
   async findAll(@Query("userId") userId: string): Promise<JobResponseDto[]> {
     const jobs = await this.jobRepository.findByUserId(userId);
     return jobs.map(JobResponseDto.fromEntity);
+  }
+
+  @Get(":id/clips")
+  @ApiOperation({ summary: "Get clips for a job", description: "Returns all clips (scenes) for a given job." })
+  @ApiParam({ name: "id", description: "Job UUID" })
+  @ApiResponse({ status: 200, description: "List of clips", type: [ClipResponseDto] })
+  async getClips(@Param("id") id: string): Promise<ClipResponseDto[]> {
+    const clips = await this.prisma.clip.findMany({
+      where: { jobId: id },
+      orderBy: { sceneIndex: "asc" },
+    });
+
+    return clips.map((clip) => ({
+      id: clip.id,
+      jobId: clip.jobId,
+      sceneIndex: clip.sceneIndex,
+      startTime: clip.startTime,
+      endTime: clip.endTime,
+      peakIntensity: clip.peakIntensity ?? undefined,
+      status: clip.status,
+      fileUrl: clip.fileUrl ?? undefined,
+      fileSize: clip.fileSize ?? undefined,
+      duration: clip.duration ?? undefined,
+      errorMessage: clip.errorMessage ?? undefined,
+      createdAt: clip.createdAt,
+      completedAt: clip.completedAt ?? undefined,
+    }));
   }
 
   @Post(":id/process")

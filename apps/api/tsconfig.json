@@ -15,9 +15,8 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@spikeclip/shared": ["../../packages/shared/src"]
-    }
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

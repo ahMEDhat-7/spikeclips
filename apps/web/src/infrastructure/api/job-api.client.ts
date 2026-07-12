@@ -1,4 +1,4 @@
-import { JobApiPort, JobResponse } from "../../domain/ports/job-api.port";
+import { JobApiPort, JobResponse, ClipResponse } from "../../domain/ports/job-api.port";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -80,6 +80,17 @@ export class JobApiClient implements JobApiPort {
     }
 
     return parseJson<{ jobId: string; clipJobIds: string[] }>(res);
+  }
+
+  async getClips(jobId: string): Promise<ClipResponse[]> {
+    const res = await fetch(`${API_BASE}/clips/job/${jobId}`);
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get clips" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<ClipResponse[]>(res);
   }
 }
 

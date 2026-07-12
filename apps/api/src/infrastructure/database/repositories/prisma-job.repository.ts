@@ -3,7 +3,8 @@ import { PrismaService } from "../prisma.service";
 import { JobRepository } from "../../../domain/repositories/job.repository";
 import { Job } from "../../../domain/entities/job.entity";
 import { JobMapper } from "../../../application/mappers/job.mapper";
-import { JobStatus } from "@spikeclip/shared";
+import { JobStatus, ScoredBlock } from "@spikeclip/shared";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaJobRepository implements JobRepository {
@@ -24,7 +25,7 @@ export class PrismaJobRepository implements JobRepository {
 
   async create(job: Job): Promise<Job> {
     const data = JobMapper.toPersistence(job);
-    const created = await this.prisma.job.create({ data });
+    const created = await this.prisma.job.create({ data: data as Prisma.JobCreateInput });
     return JobMapper.toEntity(created);
   }
 
@@ -33,7 +34,7 @@ export class PrismaJobRepository implements JobRepository {
       where: { id },
       data: {
         ...(data.status && { status: data.status }),
-        ...(data.scenes && { scenes: data.scenes }),
+        ...(data.scenes && { scenes: data.scenes as unknown as Prisma.InputJsonValue }),
         ...(data.errorMessage && { errorMessage: data.errorMessage }),
         ...(data.completedAt && { completedAt: data.completedAt }),
       },

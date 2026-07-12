@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, LinkIcon } from "lucide-react";
-import { YoutubeUrl } from "@/domain/entities/job";
+import { isValidYoutubeUrl } from "@/domain/entities/youtube-url";
 
 interface UrlInputProps {
   onSubmit?: (url: string) => void;
@@ -25,7 +25,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
       return;
     }
 
-    if (!YoutubeUrl.isValid(url)) {
+    if (!isValidYoutubeUrl(url)) {
       setError("Please enter a valid YouTube URL");
       return;
     }

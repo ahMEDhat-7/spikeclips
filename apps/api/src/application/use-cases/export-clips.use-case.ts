@@ -1,6 +1,8 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { JobRepository } from "../../domain/repositories/job.repository";
-import { QueueService } from "../../domain/services/queue";
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { randomUUID } from "crypto";
+import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
+import { QueueService, QUEUE_SERVICE } from "../../domain/services/queue";
+import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 
 @Injectable()
@@ -8,8 +10,9 @@ export class ExportClipsUseCase {
   private readonly logger = new Logger(ExportClipsUseCase.name);
 
   constructor(
-    private readonly jobRepository: JobRepository,
-    private readonly queueService: QueueService
+    @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
+    @Inject(QUEUE_SERVICE) private readonly queueService: QueueService,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(
@@ -25,14 +28,29 @@ export class ExportClipsUseCase {
     const clipJobIds: string[] = [];
 
     for (const idx of sceneIndices) {
-      if (scenes[idx]) {
-        const clipId = `${jobId}-${idx}`;
-        await this.queueService.addExportJob(jobId, {
-          clipId,
+      const scene = scenes[idx];
+      if (!scene) continue;
+
+      const clipId = randomUUID();
+
+      await this.prisma.clip.create({
+        data: {
+          id: clipId,
+          jobId,
           sceneIndex: idx,
-        });
-        clipJobIds.push(clipId);
-      }
+          startTime: scene.start_time,
+          endTime: scene.end_time,
+          peakIntensity: scene.peak_intensity,
+          status: "pending",
+        },
+      });
+
+      await this.queueService.addExportJob(jobId, {
+        clipId,
+        sceneIndex: idx,
+      });
+
+      clipJobIds.push(clipId);
     }
 
     return { jobId, clipJobIds };

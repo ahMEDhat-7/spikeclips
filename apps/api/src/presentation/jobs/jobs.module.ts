@@ -3,29 +3,32 @@ import { JobsController } from "./jobs.controller";
 import { CreateJobUseCase } from "../../application/use-cases/create-job.use-case";
 import { ProcessHeatmapUseCase } from "../../application/use-cases/process-heatmap.use-case";
 import { ExportClipsUseCase } from "../../application/use-cases/export-clips.use-case";
-import { JobRepository } from "../../domain/repositories/job.repository";
+import { JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { PrismaJobRepository } from "../../infrastructure/database/repositories/prisma-job.repository";
-import { VideoExtractor } from "../../domain/services/video-extractor";
+import { VIDEO_EXTRACTOR } from "../../domain/services/video-extractor";
 import { YtdlpService } from "../../infrastructure/external/ytdlp.service";
-import { QueueService } from "../../domain/services/queue";
+import { QUEUE_SERVICE } from "../../domain/services/queue";
 import { BullMQQueueService } from "../../infrastructure/external/queue.service";
+import { StorageModule } from "../../infrastructure/storage/storage.module";
+import { PrismaModule } from "../../infrastructure/database/prisma.module";
 
 @Module({
+  imports: [StorageModule, PrismaModule],
   controllers: [JobsController],
   providers: [
     CreateJobUseCase,
     ProcessHeatmapUseCase,
     ExportClipsUseCase,
     {
-      provide: JobRepository,
+      provide: JOB_REPOSITORY,
       useClass: PrismaJobRepository,
     },
     {
-      provide: VideoExtractor,
+      provide: VIDEO_EXTRACTOR,
       useClass: YtdlpService,
     },
     {
-      provide: QueueService,
+      provide: QUEUE_SERVICE,
       useClass: BullMQQueueService,
     },
   ],
