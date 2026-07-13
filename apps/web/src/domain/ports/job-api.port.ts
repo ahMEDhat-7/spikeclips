@@ -1,9 +1,9 @@
 import { ScoredBlock, HeatmapSpike, JobStatus } from "../entities/job";
 
 export interface JobApiPort {
-  createJob(url: string, userId: string): Promise<JobResponse>;
+  createJob(url: string): Promise<JobResponse>;
   getJob(id: string): Promise<JobResponse>;
-  getJobs(userId: string): Promise<JobResponse[]>;
+  getJobs(): Promise<JobResponse[]>;
   processJob(id: string): Promise<JobResponse>;
   exportClips(
     id: string,

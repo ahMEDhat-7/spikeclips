@@ -40,7 +40,7 @@ function DashboardContent() {
   const initialUrl = searchParams.get("url") || "";
   const { user } = useAuth();
 
-  const { job, isLoading, error, analyze } = useAnalyzeVideo(user?.id ?? null);
+  const { job, isLoading, error, analyze } = useAnalyzeVideo();
   const {
     clips,
     isExporting,
@@ -54,7 +54,7 @@ function DashboardContent() {
   const loadHistory = useCallback(async () => {
     if (!user) return;
     try {
-      const jobs = await jobApi.getJobs(user.id);
+      const jobs = await jobApi.getJobs();
       setJobHistory(jobs);
     } catch {
       // ignore

@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   Body,
-  Query,
   Inject,
   Req,
 } from "@nestjs/common";
@@ -12,7 +11,6 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiParam,
   ApiBearerAuth,
 } from "@nestjs/swagger";
@@ -66,12 +64,11 @@ export class JobsController {
 
   @Get()
   @ApiBearerAuth()
-  @ApiOperation({ summary: "List jobs for a user", description: "Returns all jobs for a given user, ordered by creation date descending." })
-  @ApiQuery({ name: "userId", description: "User ID to filter jobs", example: "user-123" })
+  @ApiOperation({ summary: "List jobs for current user", description: "Returns all jobs for the authenticated user, ordered by creation date descending." })
   @ApiResponse({ status: 200, description: "List of jobs", type: [JobResponseDto] })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async findAll(@Query("userId") userId: string): Promise<JobResponseDto[]> {
-    const jobs = await this.jobRepository.findByUserId(userId);
+  async findAll(@Req() req: Request & { user: { userId: string } }): Promise<JobResponseDto[]> {
+    const jobs = await this.jobRepository.findByUserId(req.user.userId);
     return jobs.map(JobResponseDto.fromEntity);
   }
 

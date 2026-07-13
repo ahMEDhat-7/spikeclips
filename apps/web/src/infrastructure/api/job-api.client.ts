@@ -14,12 +14,12 @@ async function parseJson<T>(res: Response): Promise<T> {
 }
 
 export class JobApiClient implements JobApiPort {
-  async createJob(url: string, userId: string): Promise<JobResponse> {
+  async createJob(url: string): Promise<JobResponse> {
     const res = await fetch(`${API_BASE}/jobs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ url, userId }),
+      body: JSON.stringify({ url }),
     });
 
     if (!res.ok) {
@@ -43,8 +43,8 @@ export class JobApiClient implements JobApiPort {
     return parseJson<JobResponse>(res);
   }
 
-  async getJobs(userId: string): Promise<JobResponse[]> {
-    const res = await fetch(`${API_BASE}/jobs?userId=${userId}`, {
+  async getJobs(): Promise<JobResponse[]> {
+    const res = await fetch(`${API_BASE}/jobs`, {
       credentials: "include",
     });
 
