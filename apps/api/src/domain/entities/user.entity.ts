@@ -9,6 +9,7 @@ export class User {
     public stripeCustomerId?: string,
     public analysesUsed: number = 0,
     public analysesLimit: number = 3,
+    public scenesLimit: number = 3,
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date()
   ) {}

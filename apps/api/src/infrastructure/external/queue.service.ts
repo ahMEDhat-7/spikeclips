@@ -1,16 +1,13 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { Queue, Worker } from "bullmq";
-import { QueueService } from "../../domain/services/queue";
+import { QueueService, ExportJobConfig } from "../../domain/services/queue";
 
 export interface AnalysisJobData {
   url: string;
   userId: string;
 }
 
-export interface ExportJobData {
-  clipId: string;
-  sceneIndex: number;
-}
+export type ExportJobData = ExportJobConfig;
 
 const connectionOptions = {
   host: process.env.REDIS_HOST || "localhost",
@@ -44,7 +41,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
 
   async addExportJob(
     jobId: string,
-    data: { clipId: string; sceneIndex: number }
+    data: ExportJobConfig
   ): Promise<void> {
     await this.exportQueue.add("export-clip", data, {
       jobId: `export-${jobId}-${data.sceneIndex}`,

@@ -1,9 +1,38 @@
 import { Injectable, Logger, Inject } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
-import { QueueService, QUEUE_SERVICE } from "../../domain/services/queue";
+import { QueueService, QUEUE_SERVICE, ExportJobConfig } from "../../domain/services/queue";
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
+import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
+
+interface ExportScene {
+  start_time: number;
+  end_time: number;
+  peak_intensity?: number;
+}
+
+interface StudioConfig {
+  platform?: string;
+  format?: string;
+  quality?: string;
+  captions?: Array<{
+    text: string;
+    font: string;
+    size: number;
+    color: string;
+    position: string;
+    animation: string;
+  }>;
+  music?: {
+    fileKey: string;
+    volume: number;
+    originalVolume: number;
+    fadeIn: number;
+    fadeOut: number;
+  };
+  templateId?: string;
+  templateConfig?: Record<string, unknown>;
+}
 
 @Injectable()
 export class ExportClipsUseCase {
@@ -17,19 +46,18 @@ export class ExportClipsUseCase {
 
   async execute(
     jobId: string,
-    sceneIndices: number[]
+    scenes: ExportScene[],
+    studioConfig?: StudioConfig
   ): Promise<{ jobId: string; clipJobIds: string[] }> {
-    this.logger.log(`Exporting clips for job ${jobId}: ${sceneIndices}`);
+    this.logger.log(`Exporting ${scenes.length} clips for job ${jobId}`);
 
     const job = await this.jobRepository.findById(jobId);
     if (!job) throw new JobNotFoundException(jobId);
 
-    const scenes = job.scenes ?? [];
     const clipJobIds: string[] = [];
 
-    for (const idx of sceneIndices) {
+    for (let idx = 0; idx < scenes.length; idx++) {
       const scene = scenes[idx];
-      if (!scene) continue;
 
       const clipId = randomUUID();
 
@@ -40,15 +68,28 @@ export class ExportClipsUseCase {
           sceneIndex: idx,
           startTime: scene.start_time,
           endTime: scene.end_time,
-          peakIntensity: scene.peak_intensity,
+          peakIntensity: scene.peak_intensity ?? null,
           status: "pending",
         },
       });
 
-      await this.queueService.addExportJob(jobId, {
+      const exportConfig: ExportJobConfig = {
         clipId,
         sceneIndex: idx,
-      });
+        videoUrl: job.url,
+        startTime: scene.start_time,
+        endTime: scene.end_time,
+        vertical: true,
+        platform: studioConfig?.platform,
+        format: studioConfig?.format,
+        quality: studioConfig?.quality,
+        captions: studioConfig?.captions,
+        music: studioConfig?.music,
+        templateId: studioConfig?.templateId,
+        templateConfig: studioConfig?.templateConfig,
+      };
+
+      await this.queueService.addExportJob(jobId, exportConfig);
 
       clipJobIds.push(clipId);
     }

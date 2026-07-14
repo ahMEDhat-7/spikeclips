@@ -370,3 +370,45 @@ export function extractTopScenes(
 
   return selectTopScenes(scored, cfg.top_n, cfg.min_spacing);
 }
+
+export function padScenes(
+  scenes: ScoredBlock[],
+  padding: number,
+  videoDuration?: number
+): ScoredBlock[] {
+  if (!scenes.length) return scenes;
+
+  const padded = scenes.map((s) => ({
+    ...s,
+    start_time: Math.max(0, s.start_time - padding),
+    end_time: videoDuration != null
+      ? Math.min(videoDuration, s.end_time + padding)
+      : s.end_time + padding,
+  }));
+
+  padded.sort((a, b) => a.start_time - b.start_time);
+
+  const merged: ScoredBlock[] = [];
+  for (const scene of padded) {
+    if (merged.length === 0) {
+      merged.push(scene);
+      continue;
+    }
+
+    const prev = merged[merged.length - 1];
+    if (scene.start_time <= prev.end_time) {
+      prev.end_time = Math.max(prev.end_time, scene.end_time);
+      prev.duration = prev.end_time - prev.start_time;
+      prev.peak_intensity = Math.max(prev.peak_intensity, scene.peak_intensity);
+      prev.avg_intensity = (prev.avg_intensity + scene.avg_intensity) / 2;
+      prev.score = Math.max(prev.score, scene.score);
+    } else {
+      merged.push(scene);
+    }
+  }
+
+  return merged.map((s) => ({
+    ...s,
+    duration: s.end_time - s.start_time,
+  }));
+}

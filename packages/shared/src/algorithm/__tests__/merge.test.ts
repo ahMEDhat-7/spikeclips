@@ -6,6 +6,7 @@ import {
   convertSecondsToTimestamp,
   validateAlgorithmConfig,
   normalizeHeatmapValues,
+  padScenes,
   AlgorithmConfigError,
 } from "../merge";
 import { HeatmapSpike, MergedBlock, ScoredBlock } from "../../types";
@@ -258,7 +259,7 @@ describe("extractTopScenes (full pipeline)", () => {
       { start_time: 108, end_time: 116, value: 1.00 },
       { start_time: 116, end_time: 124, value: 0.73 },
     ];
-    const scenes = extractTopScenes(spikes);
+    const scenes = extractTopScenes(spikes, { min_clip_duration: 3, target_duration_range: [10, 60] });
 
     expect(scenes).toHaveLength(1);
     expect(scenes[0].start_time).toBe(100);
@@ -289,7 +290,7 @@ describe("extractTopScenes (full pipeline)", () => {
       { start_time: 400, end_time: 412, value: 0.30 },
       { start_time: 600, end_time: 630, value: 0.97 },
     ];
-    const scenes = extractTopScenes(spikes, { top_n: 3 });
+    const scenes = extractTopScenes(spikes, { top_n: 3, min_clip_duration: 3, target_duration_range: [10, 60] });
 
     expect(scenes).toHaveLength(3);
     expect(scenes[0].start_time).toBeLessThan(scenes[1].start_time);
@@ -485,7 +486,7 @@ describe("extractTopScenes (new edge cases)", () => {
     const spikes: HeatmapSpike[] = [
       { start_time: 10, end_time: 25, value: 0.9 },
     ];
-    const scenes = extractTopScenes(spikes);
+    const scenes = extractTopScenes(spikes, { min_clip_duration: 3, target_duration_range: [10, 60] });
     expect(scenes).toHaveLength(1);
     expect(scenes[0].start_time).toBe(10);
     expect(scenes[0].end_time).toBe(25);
@@ -525,7 +526,7 @@ describe("extractTopScenes (new edge cases)", () => {
       { start_time: 10, end_time: 25, value: 0.9 },
       { start_time: 100, end_time: 120, value: 0.85 },
     ];
-    const scenes = extractTopScenes(spikes, { top_n: 10 });
+    const scenes = extractTopScenes(spikes, { top_n: 10, min_clip_duration: 3, target_duration_range: [10, 60] });
     expect(scenes).toHaveLength(2);
   });
 
@@ -546,7 +547,7 @@ describe("extractTopScenes (new edge cases)", () => {
       { start_time: 10, end_time: 20, value: 95 },
       { start_time: 20, end_time: 30, value: 80 },
     ];
-    const scenes = extractTopScenes(spikes);
+    const scenes = extractTopScenes(spikes, { min_clip_duration: 3, target_duration_range: [10, 60] });
     expect(scenes.length).toBeGreaterThanOrEqual(1);
     expect(scenes[0].peak_intensity).toBeLessThanOrEqual(1);
   });
@@ -573,5 +574,81 @@ describe("extractTopScenes (new edge cases)", () => {
     if (scored.length > 0) {
       expect(scored[0].peak_intensity).toBeGreaterThanOrEqual(0.8);
     }
+  });
+});
+
+describe("padScenes", () => {
+  const makeScene = (start: number, end: number, peak = 0.8): ScoredBlock => ({
+    start_time: start,
+    end_time: end,
+    duration: end - start,
+    peak_intensity: peak,
+    avg_intensity: peak * 0.8,
+    score: 0.7,
+    confidence: "high",
+    capped: false,
+  });
+
+  it("pads scenes by ±5 seconds", () => {
+    const scenes = [makeScene(100, 120)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded).toHaveLength(1);
+    expect(padded[0].start_time).toBe(95);
+    expect(padded[0].end_time).toBe(125);
+    expect(padded[0].duration).toBe(30);
+  });
+
+  it("clamps start_time to 0", () => {
+    const scenes = [makeScene(3, 20)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded[0].start_time).toBe(0);
+    expect(padded[0].end_time).toBe(25);
+  });
+
+  it("clamps end_time to videoDuration", () => {
+    const scenes = [makeScene(90, 100)];
+    const padded = padScenes(scenes, 5, 100);
+
+    expect(padded[0].start_time).toBe(85);
+    expect(padded[0].end_time).toBe(100);
+  });
+
+  it("merges overlapping scenes after padding", () => {
+    const scenes = [makeScene(10, 25), makeScene(28, 45)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded).toHaveLength(1);
+    expect(padded[0].start_time).toBe(5);
+    expect(padded[0].end_time).toBe(50);
+  });
+
+  it("keeps separate scenes when far apart", () => {
+    const scenes = [makeScene(10, 20), makeScene(100, 120)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded).toHaveLength(2);
+    expect(padded[0].end_time).toBe(25);
+    expect(padded[1].start_time).toBe(95);
+  });
+
+  it("returns empty for empty input", () => {
+    expect(padScenes([], 5)).toHaveLength(0);
+  });
+
+  it("sorts scenes by start_time", () => {
+    const scenes = [makeScene(100, 120), makeScene(10, 30)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded[0].start_time).toBeLessThan(padded[1].start_time);
+  });
+
+  it("preserves peak_intensity from the highest scene when merging", () => {
+    const scenes = [makeScene(10, 25, 0.6), makeScene(28, 45, 0.9)];
+    const padded = padScenes(scenes, 5);
+
+    expect(padded).toHaveLength(1);
+    expect(padded[0].peak_intensity).toBe(0.9);
   });
 });

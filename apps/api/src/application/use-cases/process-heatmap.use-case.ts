@@ -3,6 +3,7 @@ import {
   mergeHeatmapSpikes,
   capAndScoreBlocks,
   selectTopScenes,
+  padScenes,
   DEFAULT_ALGORITHM_CONFIG,
 } from "@spikeclips/shared";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
@@ -49,10 +50,12 @@ export class ProcessHeatmapUseCase {
         config.min_spacing
       );
 
-      job.markCompleted(selected);
+      const padded = padScenes(selected, 5, job.videoDuration);
+
+      job.markCompleted(padded);
       await this.jobRepository.update(jobId, {
         status: "completed",
-        scenes: selected,
+        scenes: padded,
         completedAt: job.completedAt,
       });
 

@@ -59,9 +59,11 @@ async function bootstrap() {
 
   try {
     const { PrismaService } = await import("./infrastructure/database/prisma.service");
+    const { FfmpegService } = await import("./infrastructure/external/ffmpeg.service");
     const prisma = app.get(PrismaService);
     const storage = app.get("STORAGE_SERVICE");
-    startWorkers(prisma, storage);
+    const ffmpeg = new FfmpegService();
+    startWorkers(prisma, storage, ffmpeg);
   } catch (err) {
     console.warn("Failed to start workers (Redis may be unavailable):", err instanceof Error ? err.message : err);
   }

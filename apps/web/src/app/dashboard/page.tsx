@@ -2,9 +2,8 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { UrlInput } from "@/presentation/components/jobs/UrlInput";
-import { HeatmapChart } from "@/presentation/components/heatmap/HeatmapChart";
-import { SceneList } from "@/presentation/components/scenes/SceneList";
 import { ClipList } from "@/presentation/components/clips/ClipList";
 import { ProcessingTimeline } from "@/presentation/components/features/ProcessingTimeline";
 import { AnimatedStats } from "@/presentation/components/features/AnimatedStats";
@@ -18,7 +17,10 @@ import { useExportClips } from "@/application/hooks/use-export-clips";
 import { useAuth } from "@/application/hooks/use-auth";
 import { jobApi } from "@/infrastructure/api/job-api.client";
 import { Job } from "@/domain/entities/job";
-import { History, ArrowLeft } from "lucide-react";
+import { SceneEditor } from "@/presentation/components/scenes/SceneEditor";
+import { VideoScenePreview } from "@/presentation/components/video/VideoScenePreview";
+import { VideoMetadataSidebar } from "@/presentation/components/video/VideoMetadataSidebar";
+import { History, ArrowLeft, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
 
 const analysisSteps = [
   { label: "Validate URL", description: "Checking YouTube link" },
@@ -38,9 +40,9 @@ function getAnalysisStep(job: Job | null): number {
 function DashboardContent() {
   const searchParams = useSearchParams();
   const initialUrl = searchParams.get("url") || "";
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
-  const { job, isLoading, error, analyze } = useAnalyzeVideo();
+  const { job, isLoading, error, analyze, loadJob } = useAnalyzeVideo(refreshUser);
   const {
     clips,
     isExporting,
@@ -50,6 +52,8 @@ function DashboardContent() {
   } = useExportClips(job?.id ?? null);
   const [jobHistory, setJobHistory] = useState<Job[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | undefined>(undefined);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const loadHistory = useCallback(async () => {
     if (!user) return;
@@ -91,16 +95,24 @@ function DashboardContent() {
             </>
           )}
         </div>
-        {jobHistory.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowHistory(!showHistory)}
-          >
-            <History className="h-4 w-4 mr-1" />
-            History ({jobHistory.length})
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <Link href={job ? `/studio?jobId=${job.id}` : "/studio"}>
+            <Button variant="outline" size="sm">
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Studio
+            </Button>
+          </Link>
+          {jobHistory.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              <History className="h-4 w-4 mr-1" />
+              History ({jobHistory.length})
+            </Button>
+          )}
+        </div>
       </div>
 
       {showHistory && jobHistory.length > 0 && (
@@ -123,7 +135,10 @@ function DashboardContent() {
               <div
                 key={j.id}
                 className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-hover cursor-pointer transition-colors"
-                onClick={() => setShowHistory(false)}
+                onClick={() => {
+                  setShowHistory(false);
+                  loadJob(j.id);
+                }}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {j.videoThumbnail && (
@@ -244,33 +259,53 @@ function DashboardContent() {
                 }
               />
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Engagement Heatmap</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <HeatmapChart
-                    heatmap={job.heatmapData ?? []}
-                    scenes={job.scenes ?? []}
+              <div className="flex gap-4 flex-col lg:flex-row">
+                <div className="flex-1 space-y-4 min-w-0">
+                  <VideoScenePreview
+                    job={job}
+                    selectedSceneIndex={selectedSceneIndex}
+                    onSceneSelect={setSelectedSceneIndex}
                   />
-                </CardContent>
-              </Card>
 
-              <SceneList
-                scenes={job.scenes ?? []}
-                onExport={exportClips}
-                isExporting={isExporting}
-              />
+                  <Card>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                      <CardTitle className="text-lg">Engagement Heatmap</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowSidebar(!showSidebar)}
+                        className="lg:hidden"
+                      >
+                        {showSidebar ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <SceneEditor
+                        heatmap={job.heatmapData ?? []}
+                        suggestedScenes={job.scenes ?? []}
+                        scenesLimit={user?.scenesLimit ?? 3}
+                        onExport={(scenes) => exportClips(scenes)}
+                        isExporting={isExporting}
+                        onSceneSelect={setSelectedSceneIndex}
+                      />
+                    </CardContent>
+                  </Card>
 
-              {exportError && (
-                <Card className="border-destructive bg-destructive/5">
-                  <CardContent className="p-4 text-destructive text-sm">
-                    {exportError}
-                  </CardContent>
-                </Card>
-              )}
+                  {exportError && (
+                    <Card className="border-destructive bg-destructive/5">
+                      <CardContent className="p-4 text-destructive text-sm">
+                        {exportError}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              <ClipList clips={clips} />
+                  <ClipList clips={clips} />
+                </div>
+
+                <div className={`w-full lg:w-72 shrink-0 ${showSidebar ? "" : "hidden lg:block"}`}>
+                  <VideoMetadataSidebar job={job} />
+                </div>
+              </div>
             </>
           )}
         </div>

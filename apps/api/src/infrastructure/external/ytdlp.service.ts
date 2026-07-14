@@ -30,6 +30,9 @@ export class YtdlpService implements VideoExtractor {
       title: metadata.title,
       thumbnail: metadata.thumbnail,
       duration: metadata.duration,
+      viewCount: metadata.view_count ?? undefined,
+      uploadDate: metadata.upload_date ?? undefined,
+      channelName: metadata.channel ?? undefined,
       heatmap: (metadata.heatmap ?? []) as HeatmapSpike[],
     };
   }

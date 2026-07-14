@@ -8,6 +8,8 @@ import { JobsModule } from "./presentation/jobs/jobs.module";
 import { ClipsModule } from "./presentation/clips/clips.module";
 import { StorageModule } from "./infrastructure/storage/storage.module";
 import { AuthModule } from "./infrastructure/auth/auth.module";
+import { MusicModule } from "./presentation/music/music.module";
+import { ExternalModule } from "./infrastructure/external/external.module";
 import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
 
 @Module({
@@ -19,6 +21,8 @@ import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
     JobsModule,
     ClipsModule,
     StorageModule,
+    MusicModule,
+    ExternalModule,
     ThrottlerModule.forRoot([
       {
         name: "global",

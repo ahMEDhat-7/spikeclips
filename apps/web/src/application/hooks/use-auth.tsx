@@ -10,6 +10,7 @@ interface User {
   plan: string;
   analysesUsed: number;
   analysesLimit: number;
+  scenesLimit: number;
   createdAt?: string;
 }
 
@@ -37,7 +38,7 @@ function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: string; analysesUsed: number; analysesLimit: number; createdAt?: string }) => {
+  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: string; analysesUsed: number; analysesLimit: number; scenesLimit: number; createdAt?: string }) => {
     setUser({
       id: profile.id,
       email: profile.email,
@@ -45,6 +46,7 @@ function useAuthProvider(): AuthContextType {
       plan: profile.plan,
       analysesUsed: profile.analysesUsed,
       analysesLimit: profile.analysesLimit,
+      scenesLimit: profile.scenesLimit,
       createdAt: profile.createdAt,
     });
   }, []);
@@ -87,6 +89,7 @@ function useAuthProvider(): AuthContextType {
       plan: result.plan,
       analysesUsed: result.analysesUsed,
       analysesLimit: result.analysesLimit,
+      scenesLimit: result.scenesLimit,
     });
   }, []);
 
@@ -99,6 +102,7 @@ function useAuthProvider(): AuthContextType {
       plan: result.plan,
       analysesUsed: result.analysesUsed,
       analysesLimit: result.analysesLimit,
+      scenesLimit: result.scenesLimit,
     });
   }, []);
 

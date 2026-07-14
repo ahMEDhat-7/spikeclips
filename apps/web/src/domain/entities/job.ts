@@ -1,21 +1,4 @@
-export type ScoredBlock = {
-  start_time: number;
-  end_time: number;
-  duration: number;
-  peak_intensity: number;
-  avg_intensity: number;
-  score: number;
-  confidence: "high" | "floor_override";
-  capped: boolean;
-};
-
-export type HeatmapSpike = {
-  start_time: number;
-  end_time: number;
-  value: number;
-};
-
-export type JobStatus = "pending" | "processing" | "completed" | "failed";
+export type { ScoredBlock, HeatmapSpike, JobStatus } from "@spikeclips/shared";
 
 export interface Job {
   id: string;
@@ -24,9 +7,12 @@ export interface Job {
   videoTitle?: string;
   videoThumbnail?: string;
   videoDuration?: number;
-  status: JobStatus;
-  scenes?: ScoredBlock[];
-  heatmapData?: HeatmapSpike[];
+  videoViewCount?: number;
+  videoUploadDate?: string;
+  videoChannelName?: string;
+  status: import("@spikeclips/shared").JobStatus;
+  scenes?: import("@spikeclips/shared").ScoredBlock[];
+  heatmapData?: import("@spikeclips/shared").HeatmapSpike[];
   errorMessage?: string;
   createdAt: string;
   completedAt?: string;

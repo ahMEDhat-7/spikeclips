@@ -6,5 +6,6 @@ export {
   extractTopScenes,
   validateAlgorithmConfig,
   normalizeHeatmapValues,
+  padScenes,
   AlgorithmConfigError,
 } from "./merge";

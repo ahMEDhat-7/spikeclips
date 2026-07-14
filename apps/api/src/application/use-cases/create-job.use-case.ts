@@ -35,6 +35,9 @@ export class CreateJobUseCase {
       metadata.title,
       metadata.thumbnail,
       metadata.duration,
+      metadata.viewCount,
+      metadata.uploadDate,
+      metadata.channelName,
       "pending",
       undefined,
       metadata.heatmap

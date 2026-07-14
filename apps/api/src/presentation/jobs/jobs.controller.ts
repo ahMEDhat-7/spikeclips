@@ -26,6 +26,7 @@ import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exce
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "../clips/dto/clip-response.dto";
 import { Throttle } from "@nestjs/throttler";
+import { AuthService } from "../../infrastructure/auth/auth.service";
 
 @ApiTags("Jobs")
 @Controller("jobs")
@@ -35,7 +36,8 @@ export class JobsController {
     private readonly processHeatmapUseCase: ProcessHeatmapUseCase,
     private readonly exportClipsUseCase: ExportClipsUseCase,
     @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService
   ) {}
 
   @Post()
@@ -46,7 +48,9 @@ export class JobsController {
   @ApiResponse({ status: 400, description: "Invalid YouTube URL" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async create(@Body() dto: CreateJobDto, @Req() req: Request & { user: { userId: string } }): Promise<JobResponseDto> {
-    return this.createJobUseCase.execute(dto.url, req.user.userId);
+    const job = await this.createJobUseCase.execute(dto.url, req.user.userId);
+    await this.authService.incrementAnalyses(req.user.userId);
+    return job;
   }
 
   @Get(":id")
@@ -135,6 +139,14 @@ export class JobsController {
     @Param("id") id: string,
     @Body() dto: ExportClipsDto
   ): Promise<{ jobId: string; clipJobIds: string[] }> {
-    return this.exportClipsUseCase.execute(id, dto.sceneIndices);
+    return this.exportClipsUseCase.execute(id, dto.scenes, {
+      platform: dto.platform,
+      format: dto.format,
+      quality: dto.quality,
+      captions: dto.captions,
+      music: dto.music,
+      templateId: dto.templateId,
+      templateConfig: dto.templateConfig,
+    });
   }
 }

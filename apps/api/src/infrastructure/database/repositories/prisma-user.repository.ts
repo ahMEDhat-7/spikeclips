@@ -8,10 +8,18 @@ import { PlanTier } from "@spikeclips/shared";
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) return null;
-
+  private toEntity(user: {
+    id: string;
+    email: string;
+    name: string | null;
+    plan: string;
+    stripeCustomerId: string | null;
+    analysesUsed: number;
+    analysesLimit: number;
+    scenesLimit: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }): User {
     return new User(
       user.id,
       user.email,
@@ -20,26 +28,22 @@ export class PrismaUserRepository implements UserRepository {
       user.stripeCustomerId ?? undefined,
       user.analysesUsed,
       user.analysesLimit,
+      user.scenesLimit,
       user.createdAt,
       user.updatedAt
     );
   }
 
+  async findById(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) return null;
+    return this.toEntity(user);
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return null;
-
-    return new User(
-      user.id,
-      user.email,
-      user.name ?? undefined,
-      user.plan as PlanTier,
-      user.stripeCustomerId ?? undefined,
-      user.analysesUsed,
-      user.analysesLimit,
-      user.createdAt,
-      user.updatedAt
-    );
+    return this.toEntity(user);
   }
 
   async create(user: User, passwordHash?: string): Promise<User> {
@@ -53,20 +57,11 @@ export class PrismaUserRepository implements UserRepository {
         stripeCustomerId: user.stripeCustomerId,
         analysesUsed: user.analysesUsed,
         analysesLimit: user.analysesLimit,
+        scenesLimit: user.scenesLimit,
       },
     });
 
-    return new User(
-      created.id,
-      created.email,
-      created.name ?? undefined,
-      created.plan as PlanTier,
-      created.stripeCustomerId ?? undefined,
-      created.analysesUsed,
-      created.analysesLimit,
-      created.createdAt,
-      created.updatedAt
-    );
+    return this.toEntity(created);
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
@@ -78,19 +73,10 @@ export class PrismaUserRepository implements UserRepository {
         ...(data.stripeCustomerId && { stripeCustomerId: data.stripeCustomerId }),
         ...(data.analysesUsed !== undefined && { analysesUsed: data.analysesUsed }),
         ...(data.analysesLimit !== undefined && { analysesLimit: data.analysesLimit }),
+        ...(data.scenesLimit !== undefined && { scenesLimit: data.scenesLimit }),
       },
     });
 
-    return new User(
-      updated.id,
-      updated.email,
-      updated.name ?? undefined,
-      updated.plan as PlanTier,
-      updated.stripeCustomerId ?? undefined,
-      updated.analysesUsed,
-      updated.analysesLimit,
-      updated.createdAt,
-      updated.updatedAt
-    );
+    return this.toEntity(updated);
   }
 }

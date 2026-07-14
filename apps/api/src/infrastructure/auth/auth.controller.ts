@@ -70,6 +70,7 @@ export class AuthController {
       plan: result.plan,
       analysesUsed: result.analysesUsed,
       analysesLimit: result.analysesLimit,
+      scenesLimit: result.scenesLimit,
     };
   }
 
@@ -89,6 +90,7 @@ export class AuthController {
       plan: result.plan,
       analysesUsed: result.analysesUsed,
       analysesLimit: result.analysesLimit,
+      scenesLimit: result.scenesLimit,
     };
   }
 

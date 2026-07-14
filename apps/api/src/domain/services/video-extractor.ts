@@ -7,6 +7,9 @@ export interface VideoMetadata {
   title: string;
   thumbnail: string;
   duration: number;
+  viewCount?: number;
+  uploadDate?: string;
+  channelName?: string;
   heatmap: HeatmapSpike[];
 }
 

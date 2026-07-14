@@ -8,6 +8,9 @@ interface PrismaJob {
   videoTitle?: string | null;
   videoThumbnail?: string | null;
   videoDuration?: number | null;
+  videoViewCount?: number | null;
+  videoUploadDate?: string | null;
+  videoChannelName?: string | null;
   status: string;
   scenes?: unknown;
   heatmapData?: unknown;
@@ -25,6 +28,9 @@ export class JobMapper {
       prismaJob.videoTitle ?? undefined,
       prismaJob.videoThumbnail ?? undefined,
       prismaJob.videoDuration ?? undefined,
+      prismaJob.videoViewCount ?? undefined,
+      prismaJob.videoUploadDate ?? undefined,
+      prismaJob.videoChannelName ?? undefined,
       prismaJob.status as JobStatus,
       (prismaJob.scenes as ScoredBlock[]) ?? undefined,
       (prismaJob.heatmapData as HeatmapSpike[]) ?? undefined,
@@ -42,6 +48,9 @@ export class JobMapper {
       videoTitle: job.videoTitle,
       videoThumbnail: job.videoThumbnail,
       videoDuration: job.videoDuration,
+      videoViewCount: job.videoViewCount,
+      videoUploadDate: job.videoUploadDate,
+      videoChannelName: job.videoChannelName,
       status: job.status,
       scenes: job.scenes,
       heatmapData: job.heatmapData,

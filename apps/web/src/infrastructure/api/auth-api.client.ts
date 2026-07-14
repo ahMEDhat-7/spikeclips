@@ -5,6 +5,7 @@ interface AuthApiResponse {
   plan: string;
   analysesUsed: number;
   analysesLimit: number;
+  scenesLimit: number;
 }
 
 interface UserResponse {
@@ -14,6 +15,7 @@ interface UserResponse {
   plan: string;
   analysesUsed: number;
   analysesLimit: number;
+  scenesLimit: number;
   createdAt: string;
 }
 
@@ -24,6 +26,7 @@ interface UpdateProfileResponse {
   plan: string;
   analysesUsed: number;
   analysesLimit: number;
+  scenesLimit: number;
   createdAt: string;
 }
 

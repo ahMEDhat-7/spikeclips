@@ -27,6 +27,7 @@ export class AuthService {
     plan: string;
     analysesUsed: number;
     analysesLimit: number;
+    scenesLimit: number;
   }> {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -45,6 +46,7 @@ export class AuthService {
         plan: "free",
         analysesUsed: 0,
         analysesLimit: 3,
+        scenesLimit: 3,
       },
     });
 
@@ -63,6 +65,7 @@ export class AuthService {
       plan: user.plan,
       analysesUsed: user.analysesUsed,
       analysesLimit: user.analysesLimit,
+      scenesLimit: user.scenesLimit,
     };
   }
 
@@ -77,6 +80,7 @@ export class AuthService {
     plan: string;
     analysesUsed: number;
     analysesLimit: number;
+    scenesLimit: number;
   }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -101,6 +105,7 @@ export class AuthService {
       plan: user.plan,
       analysesUsed: user.analysesUsed,
       analysesLimit: user.analysesLimit,
+      scenesLimit: user.scenesLimit,
     };
   }
 
@@ -111,6 +116,7 @@ export class AuthService {
     plan: string;
     analysesUsed: number;
     analysesLimit: number;
+    scenesLimit: number;
     createdAt: Date;
   } | null> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -123,6 +129,7 @@ export class AuthService {
       plan: user.plan,
       analysesUsed: user.analysesUsed,
       analysesLimit: user.analysesLimit,
+      scenesLimit: user.scenesLimit,
       createdAt: user.createdAt,
     };
   }
@@ -151,6 +158,7 @@ export class AuthService {
     plan: string;
     analysesUsed: number;
     analysesLimit: number;
+    scenesLimit: number;
     createdAt: Date;
   }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -182,6 +190,7 @@ export class AuthService {
       plan: updated.plan,
       analysesUsed: updated.analysesUsed,
       analysesLimit: updated.analysesLimit,
+      scenesLimit: updated.scenesLimit,
       createdAt: updated.createdAt,
     };
   }

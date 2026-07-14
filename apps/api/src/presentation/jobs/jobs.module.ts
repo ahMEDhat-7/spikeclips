@@ -11,9 +11,10 @@ import { QUEUE_SERVICE } from "../../domain/services/queue";
 import { BullMQQueueService } from "../../infrastructure/external/queue.service";
 import { StorageModule } from "../../infrastructure/storage/storage.module";
 import { PrismaModule } from "../../infrastructure/database/prisma.module";
+import { AuthModule } from "../../infrastructure/auth/auth.module";
 
 @Module({
-  imports: [StorageModule, PrismaModule],
+  imports: [StorageModule, PrismaModule, AuthModule],
   controllers: [JobsController],
   providers: [
     CreateJobUseCase,

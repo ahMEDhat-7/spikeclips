@@ -19,6 +19,9 @@ export class UserResponseDto {
   @ApiPropertyOptional({ description: "Analyses limit" })
   analysesLimit!: number;
 
+  @ApiPropertyOptional({ description: "Scenes limit" })
+  scenesLimit!: number;
+
   @ApiPropertyOptional({ description: "Account creation timestamp" })
   createdAt!: Date;
 }

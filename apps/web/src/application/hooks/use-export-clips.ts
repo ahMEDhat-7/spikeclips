@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { jobApi } from "../../infrastructure/api/job-api.client";
+import { jobApi, StudioExportConfig } from "../../infrastructure/api/job-api.client";
 import { ClipResponse } from "../../domain/ports/job-api.port";
 
 export function useExportClips(jobId: string | null) {
@@ -11,20 +11,23 @@ export function useExportClips(jobId: string | null) {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const exportClips = useCallback(
-    async (sceneIndices: number[]) => {
+    async (
+      scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>,
+      studioConfig?: StudioExportConfig
+    ) => {
       if (!jobId) return;
       setIsExporting(true);
       setError(null);
 
       try {
-        const result = await jobApi.exportClips(jobId, sceneIndices);
+        const result = await jobApi.exportClips(jobId, scenes, studioConfig);
         setClips(
-          result.clipJobIds.map((id) => ({
+          result.clipJobIds.map((id, i) => ({
             id,
             jobId: result.jobId,
-            sceneIndex: sceneIndices[result.clipJobIds.indexOf(id)],
-            startTime: 0,
-            endTime: 0,
+            sceneIndex: i,
+            startTime: scenes[i]?.start_time ?? 0,
+            endTime: scenes[i]?.end_time ?? 0,
             status: "pending" as const,
             createdAt: new Date().toISOString(),
           }))

@@ -9,6 +9,29 @@ interface ApiResponseError {
   path?: string;
 }
 
+export interface StudioExportConfig {
+  platform?: string;
+  format?: string;
+  quality?: string;
+  captions?: Array<{
+    text: string;
+    font: string;
+    size: number;
+    color: string;
+    position: string;
+    animation: string;
+  }>;
+  music?: {
+    fileKey: string;
+    volume: number;
+    originalVolume: number;
+    fadeIn: number;
+    fadeOut: number;
+  };
+  templateId?: string;
+  templateConfig?: Record<string, unknown>;
+}
+
 async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
@@ -72,13 +95,14 @@ export class JobApiClient implements JobApiPort {
 
   async exportClips(
     id: string,
-    sceneIndices: number[]
+    scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>,
+    studioConfig?: StudioExportConfig
   ): Promise<{ jobId: string; clipJobIds: string[] }> {
     const res = await fetch(`${API_BASE}/jobs/${id}/export`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ sceneIndices }),
+      body: JSON.stringify({ scenes, ...studioConfig }),
     });
 
     if (!res.ok) {
@@ -100,6 +124,36 @@ export class JobApiClient implements JobApiPort {
     }
 
     return parseJson<ClipResponse[]>(res);
+  }
+
+  async uploadMusic(file: File): Promise<{ id: string; name: string; url: string; size: number }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE}/music/upload`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to upload music" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<{ id: string; name: string; url: string; size: number }>(res);
+  }
+
+  async deleteMusic(key: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/music/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to delete music" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
   }
 }
 

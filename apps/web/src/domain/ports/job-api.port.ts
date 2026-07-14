@@ -7,7 +7,7 @@ export interface JobApiPort {
   processJob(id: string): Promise<JobResponse>;
   exportClips(
     id: string,
-    sceneIndices: number[]
+    scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>
   ): Promise<{ jobId: string; clipJobIds: string[] }>;
   getClips(jobId: string): Promise<ClipResponse[]>;
 }
@@ -19,6 +19,9 @@ export interface JobResponse {
   videoTitle?: string;
   videoThumbnail?: string;
   videoDuration?: number;
+  videoViewCount?: number;
+  videoUploadDate?: string;
+  videoChannelName?: string;
   status: JobStatus;
   scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];

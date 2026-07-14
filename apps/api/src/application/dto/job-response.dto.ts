@@ -21,6 +21,15 @@ export class JobResponseDto {
   @ApiPropertyOptional({ description: "Video duration in seconds", example: 212 })
   videoDuration?: number;
 
+  @ApiPropertyOptional({ description: "Video view count", example: 1500000 })
+  videoViewCount?: number;
+
+  @ApiPropertyOptional({ description: "Video upload date (YYYYMMDD)", example: "20091025" })
+  videoUploadDate?: string;
+
+  @ApiPropertyOptional({ description: "Channel name", example: "Rick Astley" })
+  videoChannelName?: string;
+
   @ApiProperty({ description: "Job status", example: "completed", enum: ["pending", "processing", "completed", "failed"] })
   status!: string;
 
@@ -47,6 +56,9 @@ export class JobResponseDto {
     dto.videoTitle = job.videoTitle;
     dto.videoThumbnail = job.videoThumbnail;
     dto.videoDuration = job.videoDuration;
+    dto.videoViewCount = job.videoViewCount;
+    dto.videoUploadDate = job.videoUploadDate;
+    dto.videoChannelName = job.videoChannelName;
     dto.status = job.status;
     dto.scenes = job.scenes;
     dto.heatmapData = job.heatmapData;

@@ -18,4 +18,7 @@ export class AuthResponseDto {
 
   @ApiProperty({ description: "Analyses limit", example: 3 })
   analysesLimit!: number;
+
+  @ApiProperty({ description: "Scenes limit", example: 3 })
+  scenesLimit!: number;
 }
