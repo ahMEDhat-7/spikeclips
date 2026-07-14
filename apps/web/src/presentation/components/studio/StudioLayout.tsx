@@ -24,22 +24,24 @@ export function StudioLayout({ left, center, right, bottom, toolbar }: StudioLay
           {left}
         </aside>
 
-        <main role="main" className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto p-4">{center}</div>
+        <main role="main" className="flex-1 flex overflow-hidden min-w-0">
+          <div className="flex-1 flex flex-col overflow-y-auto min-w-0 h-full">
+            {center}
+          </div>
 
-          {bottom && <div className="shrink-0">{bottom}</div>}
+          {right && (
+            <aside
+              role="complementary"
+              aria-label="Properties"
+              className="w-72 shrink-0 border-l bg-background overflow-y-auto p-3 hidden lg:block"
+            >
+              {right}
+            </aside>
+          )}
         </main>
-
-        {right && (
-          <aside
-            role="complementary"
-            aria-label="Properties"
-            className="w-72 shrink-0 border-l bg-background overflow-y-auto p-4 hidden lg:block"
-          >
-            {right}
-          </aside>
-        )}
       </div>
+
+      {bottom && <div className="shrink-0 border-t bg-background">{bottom}</div>}
     </div>
   );
 }

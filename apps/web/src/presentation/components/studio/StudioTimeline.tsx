@@ -24,8 +24,8 @@ export function StudioTimeline({
   if (totalDuration <= 0 || scenes.length === 0) return null;
 
   return (
-    <div className="border-t bg-background px-4 py-2">
-      <div className="relative h-12 bg-muted rounded-md overflow-hidden">
+    <div className="px-3 py-1.5">
+      <div className="relative h-7 bg-muted rounded overflow-hidden">
         {scenes.map((scene, i) => {
           const left = (scene.start_time / totalDuration) * 100;
           const width = ((scene.end_time - scene.start_time) / totalDuration) * 100;
@@ -34,7 +34,7 @@ export function StudioTimeline({
           return (
             <button
               key={`${scene.start_time}-${scene.end_time}-${i}`}
-              className={`absolute top-0 h-full rounded-sm transition-all flex flex-col items-center justify-center text-[10px] font-mono border border-transparent ${
+              className={`absolute top-0 h-full rounded-sm transition-all flex items-center justify-center text-[9px] font-mono border border-transparent ${
                 isSelected
                   ? "bg-primary/70 text-primary-foreground border-primary/50"
                   : "bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30"
@@ -44,21 +44,13 @@ export function StudioTimeline({
               title={`Scene ${i + 1}: ${formatTime(scene.start_time)} — ${formatTime(scene.end_time)} (${scene.duration.toFixed(1)}s)`}
               aria-label={`Toggle scene ${i + 1}`}
             >
-              {width > 5 && (
-                <>
-                  <span className="font-semibold">S{i + 1}</span>
-                  <span className="text-[9px] opacity-70">{scene.duration.toFixed(0)}s</span>
-                </>
-              )}
+              {width > 4 && <span className="font-semibold">S{i + 1}</span>}
             </button>
           );
         })}
       </div>
-      <div className="flex justify-between text-[10px] font-mono text-muted-foreground px-0.5 mt-1">
+      <div className="flex justify-between text-[9px] font-mono text-muted-foreground px-0.5 mt-0.5">
         <span>{formatTime(0)}</span>
-        <span>{formatTime(totalDuration / 4)}</span>
-        <span>{formatTime(totalDuration / 2)}</span>
-        <span>{formatTime((totalDuration * 3) / 4)}</span>
         <span>{formatTime(totalDuration)}</span>
       </div>
     </div>

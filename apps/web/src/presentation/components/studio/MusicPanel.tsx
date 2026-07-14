@@ -104,16 +104,13 @@ export function MusicPanel({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div>
-        <h2 className="text-lg font-semibold">Background Music</h2>
-        <p className="text-sm text-muted-foreground">
-          Add background music to your clips. Adjust volume levels.
-        </p>
+        <h2 className="text-base font-semibold">Background Music</h2>
       </div>
 
       <Card>
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-3 space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Volume2 className="h-5 w-5 text-primary" />
@@ -140,7 +137,7 @@ export function MusicPanel({
 
       {musicTrack ? (
         <Card>
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">

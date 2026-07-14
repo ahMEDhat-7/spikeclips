@@ -15,7 +15,6 @@ import {
   User,
   LayoutDashboard,
   Film,
-  Settings,
 } from "lucide-react";
 import { useAuth } from "@/application/hooks/use-auth";
 
@@ -60,8 +59,6 @@ export function Header() {
 
   useEffect(() => setMounted(true), []);
 
-  if (pathname.startsWith("/studio")) return null;
-
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -73,6 +70,8 @@ export function Header() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [dropdownOpen]);
+
+  if (pathname.startsWith("/studio")) return null;
 
   const isActive = (path: string) => pathname === path;
 
@@ -90,20 +89,17 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <NavLink href="/features" active={isActive("/features")}>Features</NavLink>
-          <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
+          {!user && (
+            <>
+              <NavLink href="/features" active={isActive("/features")}>Features</NavLink>
+              <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
+            </>
+          )}
 
           {mounted && !isLoading && (
             <>
               {user ? (
                 <div className="flex items-center gap-3">
-                  <Button asChild size="sm">
-                    <Link href="/studio">
-                      <Film className="h-4 w-4 mr-1.5" />
-                      New Analysis
-                    </Link>
-                  </Button>
-
                   <div className="h-4 w-px bg-border" />
 
                   <div className="relative" ref={dropdownRef}>
@@ -142,6 +138,15 @@ export function Header() {
                           <Film className="h-4 w-4 text-muted-foreground" />
                           Studio
                         </Link>
+                        {user.plan === "free" && (
+                          <Link
+                            href="/pricing"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-primary font-medium"
+                          >
+                            Upgrade Plan
+                          </Link>
+                        )}
                         <Link
                           href="/profile"
                           onClick={() => setDropdownOpen(false)}
@@ -149,14 +154,6 @@ export function Header() {
                         >
                           <User className="h-4 w-4 text-muted-foreground" />
                           Profile
-                        </Link>
-                        <Link
-                          href="/profile"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-                        >
-                          <Settings className="h-4 w-4 text-muted-foreground" />
-                          Settings
                         </Link>
 
                         <div className="h-px bg-border my-1" />
@@ -221,20 +218,24 @@ export function Header() {
 
       {mobileOpen && (
         <div className="md:hidden border-t bg-background px-4 py-4 space-y-3">
-          <Link
-            href="/features"
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Features
-          </Link>
-          <Link
-            href="/pricing"
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Pricing
-          </Link>
+          {!user && (
+            <>
+              <Link
+                href="/features"
+                className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+              >
+                Features
+              </Link>
+              <Link
+                href="/pricing"
+                className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+              >
+                Pricing
+              </Link>
+            </>
+          )}
 
           {mounted && !isLoading && (
             <>
@@ -263,6 +264,15 @@ export function Header() {
                     <Film className="h-4 w-4" />
                     Studio
                   </Link>
+                  {user.plan === "free" && (
+                    <Link
+                      href="/pricing"
+                      className="flex items-center gap-2 text-sm font-medium text-primary"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Upgrade Plan
+                    </Link>
+                  )}
                   <Link
                     href="/profile"
                     className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"

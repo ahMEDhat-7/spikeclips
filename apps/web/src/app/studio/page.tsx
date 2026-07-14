@@ -6,6 +6,7 @@ import { useStudio } from "@/application/hooks/use-studio";
 import { useExportClips } from "@/application/hooks/use-export-clips";
 import { jobApi } from "@/infrastructure/api/job-api.client";
 import { Job } from "@/domain/entities/job";
+import { useAuth } from "@/application/hooks/use-auth";
 import { StudioLayout } from "@/presentation/components/studio/StudioLayout";
 import { StudioToolbar } from "@/presentation/components/studio/StudioToolbar";
 import { ToolPalette } from "@/presentation/components/studio/ToolPalette";
@@ -18,6 +19,7 @@ import { TemplateLibrary } from "@/presentation/components/studio/TemplateLibrar
 import { ExportPanel } from "@/presentation/components/studio/ExportPanel";
 import { VideoScenePreview } from "@/presentation/components/video/VideoScenePreview";
 import { VideoMetadataSidebar } from "@/presentation/components/video/VideoMetadataSidebar";
+import { HeatmapChart } from "@/presentation/components/heatmap/HeatmapChart";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ function StudioContent() {
   const searchParams = useSearchParams();
   const jobIdFromUrl = searchParams.get("jobId");
   const studio = useStudio();
+  const { user } = useAuth();
 
   const [job, setJob] = useState<Job | null>(null);
   const [isLoadingJob, setIsLoadingJob] = useState(false);
@@ -99,7 +102,11 @@ function StudioContent() {
   const handleExport = useCallback(
     (outputConfig?: { format: string; quality: string }) => {
       if (!job) return;
-      const scenesToExport = studio.selectedScenes.map((i) => studio.scenes[i]);
+      let scenesToExport = studio.selectedScenes.map((i) => studio.scenes[i]);
+
+      if (user?.plan === "free" && scenesToExport.length > 3) {
+        scenesToExport = scenesToExport.slice(0, 3);
+      }
 
       const musicConfig = studio.musicTrack
         ? {
@@ -136,20 +143,61 @@ function StudioContent() {
     .reduce((sum, s) => sum + s.duration, 0);
 
   const renderCenter = () => {
+    if (job) {
+      return (
+        <div className="grid h-full" style={{ gridTemplateRows: "clamp(200px, 35vh, 400px) clamp(120px, 20vh, 200px) 1fr" }}>
+          <div className="overflow-hidden px-3 pt-2 min-h-0">
+            <VideoScenePreview
+              job={job}
+              selectedSceneIndex={selectedSceneIndex}
+              onSceneSelect={setSelectedSceneIndex}
+            />
+          </div>
+
+          {job.heatmapData && job.heatmapData.length > 0 && (
+            <div className="px-3 pt-2 min-h-0">
+              <HeatmapChart
+                heatmap={job.heatmapData}
+                scenes={job.scenes ?? []}
+                interactive
+                onSceneClick={(scene) => {
+                  const idx = (job.scenes ?? []).findIndex(
+                    (s) => s.start_time === scene.start_time && s.end_time === scene.end_time
+                  );
+                  if (idx >= 0) {
+                    setSelectedSceneIndex(idx);
+                    studio.toggleSceneSelection(idx);
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          <div className="overflow-y-auto px-3 py-2 min-h-0">
+            {renderStepContent()}
+          </div>
+        </div>
+      );
+    }
+
+    return <div className="flex-1 overflow-y-auto p-3">{renderStepContent()}</div>;
+  };
+
+  const renderStepContent = () => {
     switch (studio.currentStep) {
       case "platform":
         if (!job) {
           return (
-            <div className="max-w-xl mx-auto space-y-6 py-8">
-              <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold">Clip Studio</h1>
-                <p className="text-muted-foreground">
+            <div className="max-w-xl mx-auto space-y-4 py-6">
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-bold">Clip Studio</h1>
+                <p className="text-sm text-muted-foreground">
                   Paste a YouTube URL to start creating your clip.
                 </p>
               </div>
 
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -162,8 +210,9 @@ function StudioContent() {
                       onChange={(e) => setUrlInput(e.target.value)}
                       placeholder="https://youtube.com/watch?v=..."
                       disabled={isLoadingJob}
+                      className="text-sm"
                     />
-                    <Button type="submit" disabled={isLoadingJob || !urlInput.trim()}>
+                    <Button type="submit" disabled={isLoadingJob || !urlInput.trim()} size="sm">
                       {isLoadingJob ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
@@ -183,87 +232,69 @@ function StudioContent() {
         }
 
         return (
-          <div className="space-y-6 py-4">
-            <PlatformSelector
-              selected={studio.platform}
-              onSelect={studio.setPlatform}
-            />
-          </div>
+          <PlatformSelector
+            selected={studio.platform}
+            onSelect={studio.setPlatform}
+          />
         );
 
       case "scenes":
         return (
-          <div className="space-y-6 py-4">
-            {job && (
-              <VideoScenePreview
-                job={job}
-                selectedSceneIndex={selectedSceneIndex}
-                onSceneSelect={setSelectedSceneIndex}
-              />
-            )}
-            <SceneSelector
-              scenes={studio.scenes}
-              selectedScenes={studio.selectedScenes}
-              onToggle={studio.toggleSceneSelection}
-              onSelectAll={studio.selectAllScenes}
-              onDeselectAll={studio.deselectAllScenes}
-            />
-          </div>
+          <SceneSelector
+            scenes={studio.scenes}
+            selectedScenes={studio.selectedScenes}
+            onToggle={studio.toggleSceneSelection}
+            onSelectAll={studio.selectAllScenes}
+            onDeselectAll={studio.deselectAllScenes}
+            clipsLimit={user?.plan === "free" ? 3 : undefined}
+          />
         );
 
       case "captions":
         return (
-          <div className="py-4">
-            <CaptionEditor
-              captions={studio.captions}
-              onAdd={studio.addCaption}
-              onUpdate={studio.updateCaption}
-              onRemove={studio.removeCaption}
-            />
-          </div>
+          <CaptionEditor
+            captions={studio.captions}
+            onAdd={studio.addCaption}
+            onUpdate={studio.updateCaption}
+            onRemove={studio.removeCaption}
+          />
         );
 
       case "music":
         return (
-          <div className="py-4">
-            <MusicPanel
-              musicTrack={studio.musicTrack}
-              originalVolume={studio.originalVolume}
-              onSetMusic={studio.setMusic}
-              onSetOriginalVolume={studio.setOriginalVolume}
-            />
-          </div>
+          <MusicPanel
+            musicTrack={studio.musicTrack}
+            originalVolume={studio.originalVolume}
+            onSetMusic={studio.setMusic}
+            onSetOriginalVolume={studio.setOriginalVolume}
+          />
         );
 
       case "templates":
         return (
-          <div className="py-4">
-            <TemplateLibrary
-              selectedTemplate={studio.selectedTemplate}
-              onSelect={studio.selectTemplate}
-            />
-          </div>
+          <TemplateLibrary
+            selectedTemplate={studio.selectedTemplate}
+            onSelect={studio.selectTemplate}
+          />
         );
 
       case "export":
         return (
-          <div className="py-4">
-            <ExportPanel
-              platform={studio.platform}
-              scenes={studio.scenes}
-              selectedScenes={studio.selectedScenes}
-              captions={studio.captions}
-              musicTrack={studio.musicTrack}
-              originalVolume={studio.originalVolume}
-              selectedTemplate={studio.selectedTemplate}
-              onExport={handleExport}
-              isExporting={isExporting}
-              initialFormat={studio.outputFormat}
-              initialQuality={studio.outputQuality}
-              onFormatChange={studio.setOutputFormat}
-              onQualityChange={studio.setOutputQuality}
-            />
-          </div>
+          <ExportPanel
+            platform={studio.platform}
+            scenes={studio.scenes}
+            selectedScenes={studio.selectedScenes}
+            captions={studio.captions}
+            musicTrack={studio.musicTrack}
+            originalVolume={studio.originalVolume}
+            selectedTemplate={studio.selectedTemplate}
+            onExport={handleExport}
+            isExporting={isExporting}
+            initialFormat={studio.outputFormat}
+            initialQuality={studio.outputQuality}
+            onFormatChange={studio.setOutputFormat}
+            onQualityChange={studio.setOutputQuality}
+          />
         );
 
       default:
@@ -273,10 +304,7 @@ function StudioContent() {
 
   const renderRight = () => {
     if (!job) return null;
-    if (studio.currentStep === "platform" || studio.currentStep === "export") {
-      return <VideoMetadataSidebar job={job} />;
-    }
-    return null;
+    return <VideoMetadataSidebar job={job} />;
   };
 
   return (

@@ -27,6 +27,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "../clips/dto/clip-response.dto";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "../../infrastructure/auth/auth.service";
+import { Roles } from "../../infrastructure/auth/roles.decorator";
 
 @ApiTags("Jobs")
 @Controller("jobs")
@@ -143,9 +144,21 @@ export class JobsController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async export(
     @Param("id") id: string,
-    @Body() dto: ExportClipsDto
+    @Body() dto: ExportClipsDto,
+    @Req() req: Request & { user: { userId: string } }
   ): Promise<{ jobId: string; clipJobIds: string[] }> {
-    return this.exportClipsUseCase.execute(id, dto.scenes, {
+    let scenes = dto.scenes;
+
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { plan: true },
+    });
+
+    if (dbUser?.plan === "free" && scenes.length > 3) {
+      scenes = scenes.slice(0, 3);
+    }
+
+    return this.exportClipsUseCase.execute(id, scenes, {
       platform: dto.platform,
       format: dto.format,
       quality: dto.quality,

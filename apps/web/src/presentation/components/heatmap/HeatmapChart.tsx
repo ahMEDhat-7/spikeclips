@@ -88,7 +88,7 @@ export function HeatmapChart({
   return (
     <div
       ref={chartRef}
-      className={`w-full h-[250px] sm:h-[400px] ${interactive ? "cursor-crosshair" : ""}`}
+      className={`w-full h-full ${interactive ? "cursor-crosshair" : ""}`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart

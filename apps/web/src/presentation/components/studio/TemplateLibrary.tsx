@@ -52,12 +52,9 @@ export function TemplateLibrary({ selectedTemplate, onSelect }: TemplateLibraryP
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div>
-        <h2 className="text-lg font-semibold">Editing Templates</h2>
-        <p className="text-sm text-muted-foreground">
-          Choose a template to define the visual style and editing pattern for your clip.
-        </p>
+        <h2 className="text-base font-semibold">Editing Templates</h2>
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -100,7 +97,7 @@ export function TemplateLibrary({ selectedTemplate, onSelect }: TemplateLibraryP
                 }
               }}
             >
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-3 space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     <Icon className="h-5 w-5 text-primary" />

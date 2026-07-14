@@ -2,9 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
-import { Job, ScoredBlock } from "@/domain/entities/job";
-import { SceneTimelineBar } from "./SceneTimelineBar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Job } from "@/domain/entities/job";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
@@ -44,11 +42,13 @@ export function VideoScenePreview({
 
   const opts = {
     width: "100%",
+    height: "100%",
     playerVars: {
       autoplay: 0,
       modestbranding: 1,
       rel: 0,
       controls: 1,
+      origin: typeof window !== "undefined" ? window.location.origin : undefined,
     },
   };
 
@@ -59,7 +59,6 @@ export function VideoScenePreview({
   const handleStateChange = useCallback(
     (event: { data: number }) => {
       const state = event.data;
-      // 1 = playing, 2 = paused, 0 = ended
       if (state === 1) {
         setIsPlaying(true);
         timeUpdateRef.current = setInterval(() => {
@@ -141,67 +140,55 @@ export function VideoScenePreview({
   if (!videoId) return null;
 
   return (
-    <Card>
-      <CardContent className="p-0 overflow-hidden rounded-lg">
-        <div className="relative aspect-video w-full">
-          <YouTube
-            ref={playerRef}
-            videoId={videoId}
-            opts={opts}
-            onReady={handleReady}
-            onStateChange={handleStateChange}
-            className="absolute inset-0 w-full h-full"
-          />
+    <div className="overflow-hidden rounded-lg border bg-black flex flex-col h-full">
+      <div className="relative flex-1 min-h-0 w-full">
+        <YouTube
+          ref={playerRef}
+          videoId={videoId}
+          opts={opts}
+          onReady={handleReady}
+          onStateChange={handleStateChange}
+          className="absolute inset-0 w-full h-full"
+        />
 
-          {selectedSceneIndex != null && scenes[selectedSceneIndex] && (
-            <div className="absolute top-3 left-3 bg-black/80 text-white text-xs font-mono px-2 py-1 rounded">
-              Scene {selectedSceneIndex + 1}: {formatTime(scenes[selectedSceneIndex].start_time)} — {formatTime(scenes[selectedSceneIndex].end_time)}
-            </div>
-          )}
-        </div>
-
-        {scenes.length > 0 && (
-          <div className="px-3 py-2 border-t">
-            <SceneTimelineBar
-              duration={duration || job.videoDuration || 0}
-              scenes={scenes}
-              currentTime={currentTime}
-              selectedSceneIndex={selectedSceneIndex}
-              onSceneClick={seekToScene}
-            />
+        {selectedSceneIndex != null && scenes[selectedSceneIndex] && (
+          <div className="absolute top-2 left-2 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 rounded z-10">
+            S{selectedSceneIndex + 1}: {formatTime(scenes[selectedSceneIndex].start_time)} — {formatTime(scenes[selectedSceneIndex].end_time)}
           </div>
         )}
+      </div>
 
-        <div className="flex items-center justify-between px-3 py-2 border-t">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={prevScene}
-              disabled={selectedSceneIndex == null || selectedSceneIndex === 0}
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
+      <div className="flex items-center justify-between px-2 py-1 bg-background border-t">
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={prevScene}
+            disabled={selectedSceneIndex == null || selectedSceneIndex === 0}
+            className="h-7 w-7 p-0"
+          >
+            <SkipBack className="h-3 w-3" />
+          </Button>
 
-            <Button variant="ghost" size="sm" onClick={togglePlay}>
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
+          <Button variant="ghost" size="sm" onClick={togglePlay} className="h-7 w-7 p-0">
+            {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+          </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={nextScene}
-              disabled={selectedSceneIndex == null || selectedSceneIndex >= scenes.length - 1}
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <span className="text-xs font-mono text-muted-foreground">
-            {formatTime(currentTime)} / {formatTime(duration || job.videoDuration || 0)}
-          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={nextScene}
+            disabled={selectedSceneIndex == null || selectedSceneIndex >= scenes.length - 1}
+            className="h-7 w-7 p-0"
+          >
+            <SkipForward className="h-3 w-3" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+
+        <span className="text-[10px] font-mono text-muted-foreground">
+          {formatTime(currentTime)} / {formatTime(duration || job.videoDuration || 0)}
+        </span>
+      </div>
+    </div>
   );
 }

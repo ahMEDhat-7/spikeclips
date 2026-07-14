@@ -16,13 +16,10 @@ interface CaptionEditorProps {
 
 export function CaptionEditor({ captions, onAdd, onUpdate, onRemove }: CaptionEditorProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Captions</h2>
-          <p className="text-sm text-muted-foreground">
-            Add text overlays to your clips.
-          </p>
+          <h2 className="text-base font-semibold">Captions</h2>
         </div>
         <Button size="sm" onClick={() => onAdd()}>
           <Plus className="h-4 w-4 mr-1" />
@@ -43,7 +40,7 @@ export function CaptionEditor({ captions, onAdd, onUpdate, onRemove }: CaptionEd
 
       {captions.map((caption, index) => (
         <Card key={caption.id}>
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-3 space-y-2">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="font-mono text-xs">
                 Caption {index + 1}

@@ -13,6 +13,7 @@ interface SceneSelectorProps {
   onToggle: (index: number) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  clipsLimit?: number;
 }
 
 function formatTime(seconds: number): string {
@@ -27,17 +28,16 @@ export function SceneSelector({
   onToggle,
   onSelectAll,
   onDeselectAll,
+  clipsLimit,
 }: SceneSelectorProps) {
   const selectedSet = useMemo(() => new Set(selectedScenes), [selectedScenes]);
+  const atLimit = clipsLimit != null && selectedScenes.length >= clipsLimit;
 
   if (scenes.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div>
-          <h2 className="text-lg font-semibold">Select Scenes</h2>
-          <p className="text-sm text-muted-foreground">
-            Choose which scenes to include in your clip.
-          </p>
+          <h2 className="text-base font-semibold">Select Scenes</h2>
         </div>
         <Card className="border-dashed">
           <CardContent className="p-8 text-center">
@@ -52,13 +52,10 @@ export function SceneSelector({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Select Scenes</h2>
-          <p className="text-sm text-muted-foreground">
-            Choose which scenes to include in your clip.
-          </p>
+          <h2 className="text-base font-semibold">Select Scenes</h2>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onSelectAll}>
@@ -74,14 +71,13 @@ export function SceneSelector({
 
       <div className="text-sm text-muted-foreground">
         <Badge variant="secondary" className="font-mono mr-1">
-          {selectedScenes.length}/{scenes.length}
+          {selectedScenes.length}{clipsLimit != null ? `/${clipsLimit}` : `/${scenes.length}`}
         </Badge>
-        scenes selected
+        clips selected
+        {atLimit && (
+          <span className="text-xs text-primary ml-2">limit reached</span>
+        )}
       </div>
-
-      <p className="text-xs text-muted-foreground italic">
-        Scenes will be exported in this order.
-      </p>
 
       <div className="space-y-2">
         {scenes.map((scene, i) => {
@@ -91,18 +87,26 @@ export function SceneSelector({
             <Card
               key={`${scene.start_time}-${scene.end_time}-${i}`}
               className={`cursor-pointer transition-all ${
-                isSelected ? "border-primary bg-primary/5" : "hover:border-muted-foreground/30"
+                isSelected
+                  ? "border-primary bg-primary/5"
+                  : atLimit
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:border-muted-foreground/30"
               }`}
-              onClick={() => onToggle(i)}
+              onClick={() => {
+                if (atLimit && !isSelected) return;
+                onToggle(i);
+              }}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
+                  if (atLimit && !isSelected) return;
                   onToggle(i);
                 }
               }}
             >
-              <CardContent className="p-3 flex items-center gap-3">
+              <CardContent className="p-2 flex items-center gap-3">
                 <div
                   className={`flex h-6 w-6 items-center justify-center rounded border ${
                     isSelected

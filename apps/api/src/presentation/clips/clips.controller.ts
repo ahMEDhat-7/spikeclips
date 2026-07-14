@@ -23,6 +23,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
+import { Roles } from "../../infrastructure/auth/roles.decorator";
 
 const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
 
@@ -67,6 +68,7 @@ export class ClipsController {
   }
 
   @Get(":id/download")
+  @Roles("pro", "team")
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Download a clip",
@@ -76,6 +78,7 @@ export class ClipsController {
   @ApiResponse({ status: 200, description: "Redirects to signed download URL" })
   @ApiResponse({ status: 404, description: "Clip not found or not ready" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Pro or Team plan required" })
   async download(@Param("id") id: string, @Res() res: Response): Promise<void> {
     const clip = await this.prisma.clip.findUnique({ where: { id } });
     if (!clip) {

@@ -114,24 +114,26 @@ export function SceneEditor({
         </div>
       )}
 
-      <HeatmapChart
-        heatmap={heatmap}
-        scenes={scenes.map((s) => ({
-          start_time: s.start_time,
-          end_time: s.end_time,
-          duration: s.end_time - s.start_time,
-          peak_intensity: s.peak_intensity,
-          avg_intensity: 0,
-          score: s.score,
-          confidence: "high" as const,
-          capped: false,
-        }))}
-        interactive={canAddMore || addMode === "waiting_for_end"}
-        addStartMarker={addMode === "waiting_for_end" ? addStart : null}
-        hoverTime={hoverTime}
-        onChartClick={handleChartClick}
-        onChartMouseMove={handleChartMouseMove}
-      />
+      <div className="w-full h-[200px] sm:h-[280px]">
+        <HeatmapChart
+          heatmap={heatmap}
+          scenes={scenes.map((s) => ({
+            start_time: s.start_time,
+            end_time: s.end_time,
+            duration: s.end_time - s.start_time,
+            peak_intensity: s.peak_intensity,
+            avg_intensity: 0,
+            score: s.score,
+            confidence: "high" as const,
+            capped: false,
+          }))}
+          interactive={canAddMore || addMode === "waiting_for_end"}
+          addStartMarker={addMode === "waiting_for_end" ? addStart : null}
+          hoverTime={hoverTime}
+          onChartClick={handleChartClick}
+          onChartMouseMove={handleChartMouseMove}
+        />
+      </div>
 
       <div className="space-y-2">
         {scenes.map((scene, i) => (

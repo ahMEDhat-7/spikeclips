@@ -11,6 +11,7 @@ import { AuthModule } from "./infrastructure/auth/auth.module";
 import { MusicModule } from "./presentation/music/music.module";
 import { ExternalModule } from "./infrastructure/external/external.module";
 import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
+import { RolesGuard } from "./infrastructure/auth/roles.guard";
 
 @Module({
   imports: [
@@ -40,6 +41,10 @@ import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

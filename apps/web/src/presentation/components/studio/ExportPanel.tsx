@@ -64,19 +64,16 @@ export function ExportPanel({
   const totalDuration = selectedSceneData.reduce((sum, s) => sum + s.duration, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div>
-        <h2 className="text-lg font-semibold">Export Settings</h2>
-        <p className="text-sm text-muted-foreground">
-          Review your configuration and export your clip.
-        </p>
+        <h2 className="text-base font-semibold">Export Settings</h2>
       </div>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-1">
           <CardTitle className="text-sm">Summary</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 space-y-3 text-sm">
+        <CardContent className="p-3 space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
               <Film className="h-3.5 w-3.5" /> Platform
@@ -117,10 +114,10 @@ export function ExportPanel({
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-1">
           <CardTitle className="text-sm">Output</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 space-y-2">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Format</label>
             <div className="flex gap-2">
@@ -161,7 +158,7 @@ export function ExportPanel({
 
       <Button
         className="w-full bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold"
-        size="lg"
+        size="default"
         onClick={() => onExport({ format, quality })}
         disabled={isExporting || selectedScenes.length === 0}
       >
