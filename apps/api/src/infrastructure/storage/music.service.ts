@@ -33,7 +33,12 @@ export class MusicService {
     };
   }
 
-  async deleteMusic(_key: string): Promise<void> {
-    this.logger.log(`Music deletion requested (not implemented for local driver)`);
+  async deleteMusic(key: string): Promise<void> {
+    try {
+      await this.storage.delete(key);
+      this.logger.log(`Music deleted: ${key}`);
+    } catch (err) {
+      this.logger.warn(`Failed to delete music ${key}: ${err instanceof Error ? err.message : err}`);
+    }
   }
 }

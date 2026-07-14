@@ -56,4 +56,9 @@ export class MinioStorageService implements StorageService, OnModuleInit {
   async getSignedUrl(key: string, expiresInSec: number = 3600): Promise<string> {
     return this.client.presignedGetObject(this.bucket, key, expiresInSec);
   }
+
+  async delete(key: string): Promise<void> {
+    await this.client.removeObject(this.bucket, key);
+    this.logger.log(`Deleted from MinIO: ${key}`);
+  }
 }

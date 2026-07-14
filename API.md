@@ -2,6 +2,14 @@
 
 All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 
+## Authentication
+
+All protected endpoints use httpOnly cookies for JWT authentication:
+
+- `POST /api/auth/register` and `POST /api/auth/login` set the `access_token` cookie automatically
+- Subsequent requests include the cookie automatically (with `credentials: "include"`)
+- Swagger UI can also use Bearer token in the Authorization header
+
 ## Health
 
 | Method | Endpoint | Auth | Rate Limit | Description |
@@ -12,9 +20,12 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
-| `POST` | `/api/auth/register` | Public | 5/min | Create account, returns JWT |
-| `POST` | `/api/auth/login` | Public | 5/min | Login, returns JWT |
+| `POST` | `/api/auth/register` | Public | 5/min | Create account, sets JWT cookie |
+| `POST` | `/api/auth/login` | Public | 5/min | Login, sets JWT cookie |
+| `POST` | `/api/auth/logout` | Bearer | Global | Clear JWT cookie |
 | `GET` | `/api/auth/me` | Bearer | Global | Get current user profile |
+| `PATCH` | `/api/auth/me` | Bearer | Global | Update profile (name, email) |
+| `POST` | `/api/auth/change-password` | Bearer | Global | Change password |
 
 ### Register
 
@@ -27,16 +38,16 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 }
 ```
 
-**Response (201):**
+**Response (201):** Sets `access_token` httpOnly cookie
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "plan": "free"
-  }
+  "userId": "uuid",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "plan": "free",
+  "analysesUsed": 0,
+  "analysesLimit": 3,
+  "scenesLimit": 3
 }
 ```
 
@@ -50,22 +61,27 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 }
 ```
 
-**Response (200):**
+**Response (200):** Sets `access_token` httpOnly cookie
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "plan": "free"
-  }
+  "userId": "uuid",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "plan": "free",
+  "analysesUsed": 1,
+  "analysesLimit": 3,
+  "scenesLimit": 3
 }
 ```
 
-### Get Profile
+### Logout
 
-**Headers:** `Authorization: Bearer <token>`
+**Response (200):** Clears `access_token` cookie
+```json
+{ "message": "Logged out" }
+```
+
+### Get Profile
 
 **Response (200):**
 ```json
@@ -76,9 +92,34 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
   "plan": "free",
   "analysesUsed": 1,
   "analysesLimit": 3,
+  "scenesLimit": 3,
   "createdAt": "2026-07-12T12:00:00.000Z"
 }
 ```
+
+### Update Profile
+
+**Request:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com"
+}
+```
+
+**Response (200):** Updated user profile
+
+### Change Password
+
+**Request:**
+```json
+{
+  "currentPassword": "oldpassword",
+  "newPassword": "newpassword"
+}
+```
+
+**Response (200):** `{ "message": "Password changed" }`
 
 ---
 
@@ -86,7 +127,7 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
-| `POST` | `/api/jobs` | Bearer | 5/min | Create analysis job |
+| `POST` | `/api/jobs` | Bearer | 5/min | Create analysis job (quota enforced) |
 | `GET` | `/api/jobs` | Bearer | Global | List user's jobs |
 | `GET` | `/api/jobs/:id` | Bearer | Global | Get job by ID |
 | `POST` | `/api/jobs/:id/process` | Bearer | 5/min | Run algorithm on heatmap |
@@ -94,6 +135,8 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
 | `GET` | `/api/jobs/:id/clips` | Bearer | Global | Get clips for job |
 
 ### Create Job
+
+Free-tier users are limited to 3 analyses/month. Returns 403 if quota exceeded.
 
 **Request:**
 ```json
@@ -110,6 +153,9 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
   "videoTitle": "Video Title",
   "videoThumbnail": "https://...",
   "videoDuration": 360.5,
+  "videoViewCount": 1500000,
+  "videoUploadDate": "2026-06-01",
+  "videoChannelName": "Channel Name",
   "status": "pending",
   "createdAt": "2026-07-12T12:00:00.000Z"
 }
@@ -125,6 +171,9 @@ All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
   "videoTitle": "Video Title",
   "videoThumbnail": "https://...",
   "videoDuration": 360.5,
+  "videoViewCount": 1500000,
+  "videoUploadDate": "2026-06-01",
+  "videoChannelName": "Channel Name",
   "status": "completed",
   "scenes": [
     {
@@ -157,7 +206,32 @@ Runs the spike merging algorithm on the job's heatmap data.
 **Request:**
 ```json
 {
-  "sceneIndices": [0, 2]
+  "scenes": [
+    { "start_time": 45.2, "end_time": 78.4, "peak_intensity": 0.92 },
+    { "start_time": 120.0, "end_time": 165.0, "peak_intensity": 0.85 }
+  ],
+  "platform": "youtube-shorts",
+  "format": "mp4",
+  "quality": "1080p",
+  "captions": [
+    {
+      "text": "Check this out!",
+      "font": "inter",
+      "size": 48,
+      "color": "#FFFFFF",
+      "position": "center",
+      "animation": "pop"
+    }
+  ],
+  "music": {
+    "fileKey": "user-id/track.mp3",
+    "volume": 0.3,
+    "originalVolume": 1.0,
+    "fadeIn": 2,
+    "fadeOut": 2
+  },
+  "templateId": "kinetic-typography",
+  "templateConfig": { "textAnimation": "pop", "transitionIn": "fade" }
 }
 ```
 
@@ -177,6 +251,7 @@ Runs the spike merging algorithm on the job's heatmap data.
 |--------|----------|------|------------|-------------|
 | `GET` | `/api/clips/job/:jobId` | Bearer | Global | List clips by job ID |
 | `GET` | `/api/clips/:id/download` | Bearer | Global | Download clip (redirect to signed URL) |
+| `GET` | `/api/clips/download/:key` | Bearer | Global | Download by storage key (signed URL) |
 
 ### List Clips
 
@@ -194,6 +269,7 @@ Runs the spike merging algorithm on the job's heatmap data.
     "fileUrl": "clips/job-uuid/scene-0.mp4",
     "fileSize": 1048576,
     "duration": 33.2,
+    "errorMessage": null,
     "createdAt": "2026-07-12T12:00:00.000Z"
   }
 ]
@@ -205,6 +281,36 @@ Runs the spike merging algorithm on the job's heatmap data.
 
 ---
 
+## Music
+
+| Method | Endpoint | Auth | Rate Limit | Description |
+|--------|----------|------|------------|-------------|
+| `POST` | `/api/music/upload` | Bearer | Global | Upload background music (max 10MB) |
+| `DELETE` | `/api/music/:key` | Bearer | Global | Delete uploaded music |
+
+### Upload Music
+
+**Request:** `multipart/form-data` with `file` field (audio/mpeg, audio/wav, audio/ogg, audio/mp4)
+
+**Response (201):**
+```json
+{
+  "id": "user-id/uuid-filename.mp3",
+  "name": "track.mp3",
+  "url": "http://localhost:3001/api/clips/download/...",
+  "size": 1048576
+}
+```
+
+### Delete Music
+
+**Response (200):**
+```json
+{ "deleted": true }
+```
+
+---
+
 ## Status Codes
 
 | Code | Description |
@@ -213,17 +319,8 @@ Runs the spike merging algorithm on the job's heatmap data.
 | 201 | Created |
 | 400 | Bad request (invalid input) |
 | 401 | Unauthorized (missing/invalid token) |
+| 403 | Forbidden (quota exceeded) |
 | 404 | Resource not found |
 | 409 | Conflict (e.g., email already registered) |
 | 429 | Rate limit exceeded |
 | 500 | Internal server error |
-
-## Authentication
-
-All protected endpoints require a Bearer token:
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-```
-
-Get a token via `/api/auth/login` or `/api/auth/register`.

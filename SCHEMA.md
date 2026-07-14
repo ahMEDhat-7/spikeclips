@@ -1,6 +1,6 @@
 # Database Schema
 
-PostgreSQL 18 with Prisma ORM.
+PostgreSQL 16 with Prisma ORM.
 
 ## User
 
@@ -14,6 +14,7 @@ PostgreSQL 18 with Prisma ORM.
 | `stripeCustomerId` | String? | Stripe customer ID |
 | `analysesUsed` | Int | Current period usage (default: 0) |
 | `analysesLimit` | Int | Monthly limit (default: 3) |
+| `scenesLimit` | Int | Max scenes per analysis (default: 3) |
 | `createdAt` | DateTime | Account creation timestamp |
 | `updatedAt` | DateTime | Last update timestamp |
 
@@ -30,6 +31,9 @@ PostgreSQL 18 with Prisma ORM.
 | `videoTitle` | String? | Extracted video title |
 | `videoThumbnail` | String? | Thumbnail URL |
 | `videoDuration` | Float? | Duration in seconds |
+| `videoViewCount` | Int? | View count from YouTube |
+| `videoUploadDate` | String? | Upload date (YYYYMMDD format) |
+| `videoChannelName` | String? | Channel name |
 | `status` | String | `pending` / `processing` / `completed` / `failed` |
 | `scenes` | Json? | `ScoredBlock[]` from algorithm |
 | `heatmapData` | Json? | `HeatmapSpike[]` from yt-dlp |

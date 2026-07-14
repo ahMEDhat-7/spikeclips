@@ -29,6 +29,17 @@ pnpm --filter @spikeclips/api prisma:migrate
 pnpm dev
 ```
 
+### Quick Commands
+
+```bash
+pnpm dev              # Start all apps in dev mode
+pnpm build            # Build all apps
+pnpm start            # Start all apps in production mode
+pnpm test             # Run all tests
+pnpm dev:api          # Start API only
+pnpm dev:web          # Start Web only
+```
+
 ### Services
 
 | Service | Port | Description |
@@ -39,6 +50,14 @@ pnpm dev
 | PostgreSQL | 5433 | Database |
 | Redis | 6380 | Job queues |
 | MinIO | 9000/9001 | Object storage |
+
+### Storage
+
+The API supports two storage drivers:
+- **local** (default): Files stored in `/tmp/spikeclips-clips`
+- **minio**: Files stored in MinIO object storage
+
+Set `STORAGE_DRIVER=minio` in `.env` to use MinIO. Music uploads require the storage service to support `delete()`.
 
 ---
 

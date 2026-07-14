@@ -16,4 +16,10 @@ export interface VideoMetadata {
 export interface VideoExtractor {
   extractMetadata(url: string): Promise<VideoMetadata>;
   extractHeatmap(url: string): Promise<HeatmapSpike[]>;
+  downloadSection(
+    url: string,
+    startTime: number,
+    endTime: number,
+    outputPath: string
+  ): Promise<void>;
 }

@@ -4,8 +4,19 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "start": "turbo start",
     "lint": "turbo lint",
-    "test": "turbo test"
+    "test": "turbo test",
+    "dev:api": "pnpm --filter @spikeclips/api dev",
+    "dev:web": "pnpm --filter @spikeclips/web dev",
+    "build:api": "pnpm --filter @spikeclips/api build",
+    "build:web": "pnpm --filter @spikeclips/web build",
+    "build:shared": "pnpm --filter @spikeclips/shared build",
+    "start:api": "pnpm --filter @spikeclips/api start",
+    "start:web": "pnpm --filter @spikeclips/web start",
+    "test:api": "pnpm --filter @spikeclips/api test",
+    "test:web": "pnpm --filter @spikeclips/web test",
+    "test:shared": "pnpm --filter @spikeclips/shared test"
   },
   "devDependencies": {
     "turbo": "^2.10.4"

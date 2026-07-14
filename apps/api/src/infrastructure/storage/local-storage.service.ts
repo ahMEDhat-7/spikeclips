@@ -1,5 +1,5 @@
 import { Injectable, Logger, ForbiddenException } from "@nestjs/common";
-import { writeFile, readFile, mkdir, stat } from "fs/promises";
+import { writeFile, readFile, mkdir, stat, unlink } from "fs/promises";
 import { join, resolve } from "path";
 import { StorageService } from "./storage.interface";
 import { randomBytes, createHmac, timingSafeEqual } from "crypto";
@@ -52,6 +52,16 @@ export class LocalStorageService implements StorageService {
 
     const baseUrl = process.env.CLIPS_BASE_URL || `http://localhost:${process.env.PORT || 3001}/api`;
     return `${baseUrl}/clips/download/${encodeURIComponent(key)}?expires=${expires}&sig=${signature}`;
+  }
+
+  async delete(key: string): Promise<void> {
+    const filePath = join(CLIPS_DIR, key);
+    const resolved = resolve(filePath);
+    if (!resolved.startsWith(resolve(CLIPS_DIR))) {
+      throw new ForbiddenException("Invalid storage key");
+    }
+    await unlink(resolved);
+    this.logger.log(`Deleted file: ${resolved}`);
   }
 
   static verifySignature(key: string, expires: number, sig: string): boolean {

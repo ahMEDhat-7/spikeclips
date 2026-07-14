@@ -1,26 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { VideoProcessor } from "../../domain/services/video-processor";
+import {
+  VideoProcessor,
+  CaptionOverlay,
+  MusicMixConfig,
+} from "../../domain/services/video-processor";
 
 const execFileAsync = promisify(execFile);
-
-export interface CaptionOverlay {
-  text: string;
-  font: string;
-  size: number;
-  color: string;
-  position: string;
-  animation: string;
-}
-
-export interface MusicMixConfig {
-  fileKey: string;
-  volume: number;
-  originalVolume: number;
-  fadeIn: number;
-  fadeOut: number;
-}
 
 @Injectable()
 export class FfmpegService implements VideoProcessor {

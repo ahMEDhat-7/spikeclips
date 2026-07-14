@@ -110,6 +110,7 @@ export interface User {
   stripeCustomerId?: string;
   analysesUsed: number;
   analysesLimit: number;
+  scenesLimit: number;
   createdAt: Date;
   updatedAt: Date;
 }

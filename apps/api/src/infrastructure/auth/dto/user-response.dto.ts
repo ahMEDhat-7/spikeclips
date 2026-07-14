@@ -1,27 +1,27 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class UserResponseDto {
-  @ApiPropertyOptional({ description: "User ID" })
+  @ApiProperty({ description: "User ID", example: "550e8400-e29b-41d4-a716-446655440000" })
   id!: string;
 
-  @ApiPropertyOptional({ description: "User email" })
+  @ApiProperty({ description: "User email", example: "user@example.com" })
   email!: string;
 
-  @ApiPropertyOptional({ description: "Display name" })
+  @ApiProperty({ description: "Display name", example: "John Doe", required: false })
   name?: string;
 
-  @ApiPropertyOptional({ description: "Plan tier" })
+  @ApiProperty({ description: "Plan tier", example: "free", enum: ["free", "pro", "team"] })
   plan!: string;
 
-  @ApiPropertyOptional({ description: "Analyses used this month" })
+  @ApiProperty({ description: "Analyses used this month", example: 1 })
   analysesUsed!: number;
 
-  @ApiPropertyOptional({ description: "Analyses limit" })
+  @ApiProperty({ description: "Monthly analyses limit", example: 3 })
   analysesLimit!: number;
 
-  @ApiPropertyOptional({ description: "Scenes limit" })
+  @ApiProperty({ description: "Maximum scenes per analysis", example: 3 })
   scenesLimit!: number;
 
-  @ApiPropertyOptional({ description: "Account creation timestamp" })
+  @ApiProperty({ description: "Account creation timestamp", example: "2026-01-15T10:30:00.000Z" })
   createdAt!: Date;
 }

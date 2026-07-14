@@ -10,7 +10,14 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from "@nestjs/swagger";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiResponse,
+  ApiParam,
+} from "@nestjs/swagger";
 import { Request } from "express";
 import { MusicService } from "../../infrastructure/storage/music.service";
 
@@ -28,8 +35,11 @@ export class MusicController {
 
   @Post("upload")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Upload background music" })
+  @ApiOperation({ summary: "Upload background music", description: "Upload an audio file (MP3, WAV, OGG, M4A) for use as background music in clips. Max 10MB." })
   @ApiConsumes("multipart/form-data")
+  @ApiResponse({ status: 201, description: "Music uploaded successfully", schema: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, url: { type: "string" }, size: { type: "number" } } } })
+  @ApiResponse({ status: 400, description: "Invalid file type or size" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @UseInterceptors(FileInterceptor("file"))
   async upload(
     @UploadedFile() file: MulterFile | undefined,
@@ -53,7 +63,11 @@ export class MusicController {
 
   @Delete(":key")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Delete uploaded music" })
+  @ApiOperation({ summary: "Delete uploaded music", description: "Remove a previously uploaded music file from storage." })
+  @ApiParam({ name: "key", description: "Music file key (URL-encoded)", example: "user-id%2Fabc-track.mp3" })
+  @ApiResponse({ status: 200, description: "Music deleted successfully", schema: { type: "object", properties: { deleted: { type: "boolean", example: true } } } })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 404, description: "Music file not found" })
   async delete(@Param("key") key: string) {
     await this.musicService.deleteMusic(decodeURIComponent(key));
     return { deleted: true };

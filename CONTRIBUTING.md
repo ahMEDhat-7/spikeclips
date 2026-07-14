@@ -10,6 +10,16 @@ Thanks for your interest in contributing! This guide covers code style, conventi
 - **Functional code** — Prefer pure functions. Use classes only when framework requires it (NestJS controllers, services).
 - **No comments** — Code should be self-documenting. Comments are only added when explicitly requested.
 
+## Adding New Endpoints
+
+When adding a new API endpoint:
+
+1. Create the DTO with `@ApiProperty` decorators for Swagger
+2. Add `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth` decorators to the controller method
+3. Update `API.md` with the new endpoint documentation
+4. Add the endpoint tag to `DocumentBuilder` in `main.ts` if creating a new controller
+5. Write unit tests for the use case and integration tests for the controller
+
 ## Git Conventions
 
 | Prefix | Usage |

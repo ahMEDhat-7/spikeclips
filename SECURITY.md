@@ -12,15 +12,23 @@ If you discover a security vulnerability, please report it responsibly:
 ## Security Measures
 
 ### Authentication
-- JWT tokens with bcrypt password hashing
-- Token expiration and refresh mechanism
+- JWT tokens stored as httpOnly cookies (not accessible via JavaScript)
+- bcrypt password hashing (12 rounds)
+- 15-minute token expiration
 - Rate limiting on auth endpoints (5 req/min)
+
+### Cookie Security
+- `httpOnly: true` — Prevents JavaScript access
+- `secure: true` in production — HTTPS only
+- `sameSite: "lax"` — CSRF protection
+- `path: "/"` — Cookie available on all routes
 
 ### API Security
 - Global rate limiting (30 req/min per IP)
 - CORS configured per environment
 - Input validation via class-validator
 - SQL injection prevention via Prisma ORM
+- Quota enforcement on analysis creation (free tier: 3/month)
 
 ### Infrastructure
 - SSH key-only authentication (port 2222)
@@ -32,7 +40,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 ### Data Protection
 - Environment variables for secrets (never committed)
-- Signed URLs for clip downloads (MinIO)
+- Signed URLs for clip downloads (MinIO/local)
 - HTTPS via Let's Encrypt / Certbot
 - Security headers (CSP, HSTS, X-Frame-Options)
 
@@ -40,8 +48,8 @@ If you discover a security vulnerability, please report it responsibly:
 
 | Version | Supported |
 |---------|-----------|
-| Latest  | Yes |
-| Older   | No |
+| 1.0.x   | Yes       |
+| < 1.0   | No        |
 
 ## Dependencies
 

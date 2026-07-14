@@ -47,7 +47,13 @@ export class JobsController {
   @ApiResponse({ status: 201, description: "Job created successfully", type: JobResponseDto })
   @ApiResponse({ status: 400, description: "Invalid YouTube URL" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Analysis quota exceeded" })
   async create(@Body() dto: CreateJobDto, @Req() req: Request & { user: { userId: string } }): Promise<JobResponseDto> {
+    const canAnalyze = await this.authService.checkCanAnalyze(req.user.userId);
+    if (!canAnalyze) {
+      const { ForbiddenException } = await import("@nestjs/common");
+      throw new ForbiddenException("Analysis quota exceeded. Upgrade your plan for unlimited analyses.");
+    }
     const job = await this.createJobUseCase.execute(dto.url, req.user.userId);
     await this.authService.incrementAnalyses(req.user.userId);
     return job;

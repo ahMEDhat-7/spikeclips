@@ -47,6 +47,7 @@ async function bootstrap() {
     .addTag("Auth", "User authentication and registration")
     .addTag("Jobs", "Video analysis jobs — create, process, export clips")
     .addTag("Clips", "Clip download and management")
+    .addTag("Music", "Background music upload and management")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
