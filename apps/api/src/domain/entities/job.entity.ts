@@ -40,6 +40,7 @@ export class Job {
   markFailed(error: string): void {
     this.status = "failed";
     this.errorMessage = error;
+    this.completedAt = new Date();
   }
 
   hasHeatmapData(): boolean {

@@ -173,7 +173,8 @@ export function mergeHeatmapSpikes(
 
 function bestSubwindow(
   segments: HeatmapSpike[],
-  maxClipDuration: number
+  maxClipDuration: number,
+  minClipDuration: number = 0
 ): {
   start_time: number;
   end_time: number;
@@ -226,7 +227,7 @@ function bestSubwindow(
     }
 
     const span = segments[right].end_time - segments[left].start_time;
-    if (span <= maxClipDuration && windowDuration > 0) {
+    if (span <= maxClipDuration && windowDuration >= minClipDuration && windowDuration > 0) {
       const avg = windowWeighted / windowDuration;
       const combined = 0.6 * avg + 0.4 * windowPeak;
       if (!best || combined > bestCombined) {
@@ -272,7 +273,7 @@ export function capAndScoreBlocks(
     const blockDuration = block.end_time - block.start_time;
 
     if (blockDuration > maxClipDuration) {
-      const sub = bestSubwindow(block.segments, maxClipDuration);
+      const sub = bestSubwindow(block.segments, maxClipDuration, minClipDuration);
       if (!sub) continue;
       start = sub.start_time;
       end = sub.end_time;

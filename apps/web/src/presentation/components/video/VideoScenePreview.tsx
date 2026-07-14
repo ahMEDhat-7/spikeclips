@@ -143,14 +143,14 @@ export function VideoScenePreview({
   return (
     <Card>
       <CardContent className="p-0 overflow-hidden rounded-lg">
-        <div className="relative">
+        <div className="relative aspect-video w-full">
           <YouTube
             ref={playerRef}
             videoId={videoId}
             opts={opts}
             onReady={handleReady}
             onStateChange={handleStateChange}
-            className="w-full aspect-video"
+            className="absolute inset-0 w-full h-full"
           />
 
           {selectedSceneIndex != null && scenes[selectedSceneIndex] && (

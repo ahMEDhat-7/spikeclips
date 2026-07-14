@@ -29,7 +29,6 @@ export class FfmpegService implements VideoProcessor {
       "-t", String(duration),
       "-c:v", "libx264",
       "-c:a", "aac",
-      "--force-keyframes-at-cuts",
       outputPath,
     ]);
   }
@@ -53,7 +52,6 @@ export class FfmpegService implements VideoProcessor {
       "-vf", `crop=ih*9/16:ih,scale=${width}:${height}`,
       "-c:v", "libx264",
       "-c:a", "aac",
-      "--force-keyframes-at-cuts",
       outputPath,
     ]);
   }

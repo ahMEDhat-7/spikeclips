@@ -93,12 +93,12 @@ export class PrismaClipRepository implements ClipRepository {
     const updated = await this.prisma.clip.update({
       where: { id },
       data: {
-        ...(data.status && { status: data.status }),
-        ...(data.fileUrl && { fileUrl: data.fileUrl }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.fileUrl !== undefined && { fileUrl: data.fileUrl }),
         ...(data.fileSize !== undefined && { fileSize: data.fileSize }),
         ...(data.duration !== undefined && { duration: data.duration }),
-        ...(data.errorMessage && { errorMessage: data.errorMessage }),
-        ...(data.completedAt && { completedAt: data.completedAt }),
+        ...(data.errorMessage !== undefined && { errorMessage: data.errorMessage }),
+        ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
       },
     });
 

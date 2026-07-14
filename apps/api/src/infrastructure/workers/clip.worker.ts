@@ -99,7 +99,6 @@ export function createClipWorker(
             "libx264",
             "-c:a",
             "aac",
-            "--force-keyframes-at-cuts",
             tmpCropped,
           ]);
         } else {
@@ -113,7 +112,6 @@ export function createClipWorker(
             "libx264",
             "-c:a",
             "aac",
-            "--force-keyframes-at-cuts",
             tmpCropped,
           ]);
         }
@@ -152,7 +150,7 @@ export function createClipWorker(
 
         const storageKey = `clips/${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
         await storage.uploadFromFile(tmpOutput, storageKey, "video/mp4");
-        const fileUrl = await storage.getSignedUrl(storageKey);
+        const fileUrl = storageKey;
         const fileSize = (await stat(tmpOutput)).size;
 
         await prisma.clip.update({
