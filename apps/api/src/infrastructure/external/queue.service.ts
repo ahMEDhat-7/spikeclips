@@ -32,7 +32,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     jobId: string,
     data: { url: string; userId: string }
   ): Promise<void> {
-    await this.analysisQueue.add("process", data, {
+    await this.analysisQueue.add("process", { ...data, jobId }, {
       jobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
@@ -43,7 +43,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     jobId: string,
     data: ExportJobConfig
   ): Promise<void> {
-    await this.exportQueue.add("export-clip", data, {
+    await this.exportQueue.add("export-clip", { ...data, jobId }, {
       jobId: `export-${jobId}-${data.sceneIndex}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
