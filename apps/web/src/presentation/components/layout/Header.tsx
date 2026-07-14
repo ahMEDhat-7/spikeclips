@@ -6,7 +6,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Menu, X, LogOut, User, ChevronDown } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  Menu,
+  X,
+  LogOut,
+  User,
+  LayoutDashboard,
+  Film,
+  Settings,
+} from "lucide-react";
 import { useAuth } from "@/application/hooks/use-auth";
 
 function NavLink({ href, active, children }: { href: string; active?: boolean; children: React.ReactNode }) {
@@ -22,6 +32,23 @@ function NavLink({ href, active, children }: { href: string; active?: boolean; c
   );
 }
 
+function UserAvatar({ name, className }: { name: string; className?: string }) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div
+      className={`flex items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold ${className}`}
+    >
+      {initials}
+    </div>
+  );
+}
+
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, logout, isLoading } = useAuth();
@@ -32,6 +59,8 @@ export function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  if (pathname.startsWith("/studio")) return null;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -68,47 +97,76 @@ export function Header() {
             <>
               {user ? (
                 <div className="flex items-center gap-3">
-                  <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>
+                  <Button asChild size="sm">
+                    <Link href="/studio">
+                      <Film className="h-4 w-4 mr-1.5" />
+                      New Analysis
+                    </Link>
+                  </Button>
+
                   <div className="h-4 w-px bg-border" />
 
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-2 rounded-full transition-all hover:ring-2 hover:ring-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      <span className="max-w-[120px] truncate">{user.name || user.email}</span>
-                      <Badge variant="secondary" className="text-xs font-mono hidden lg:inline-flex">
-                        {user.plan === "free"
-                          ? `${user.analysesUsed}/${user.analysesLimit}`
-                          : user.plan}
-                      </Badge>
-                      <ChevronDown className="h-3 w-3" />
+                      <UserAvatar name={user.name || user.email} className="h-9 w-9 text-sm" />
                     </button>
 
                     {dropdownOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border bg-background shadow-lg p-1 space-y-0.5">
-                        <Link
-                          href="/profile"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-                        >
-                          <User className="h-4 w-4" />
-                          Profile
-                        </Link>
+                      <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-background shadow-lg p-1.5 space-y-0.5">
+                        <div className="px-3 py-2 border-b mb-1">
+                          <p className="text-sm font-medium truncate">{user.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          <Badge variant="secondary" className="text-[10px] font-mono mt-1.5">
+                            {user.plan === "free"
+                              ? `${user.analysesUsed}/${user.analysesLimit} analyses`
+                              : user.plan}
+                          </Badge>
+                        </div>
+
                         <Link
                           href="/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
                         >
+                          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                           Dashboard
                         </Link>
+                        <Link
+                          href="/studio"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <Film className="h-4 w-4 text-muted-foreground" />
+                          Studio
+                        </Link>
+                        <Link
+                          href="/profile"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          Profile
+                        </Link>
+                        <Link
+                          href="/profile"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <Settings className="h-4 w-4 text-muted-foreground" />
+                          Settings
+                        </Link>
+
                         <div className="h-px bg-border my-1" />
+
                         <button
                           onClick={() => {
                             setDropdownOpen(false);
                             logout();
                           }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-destructive"
+                          className="flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-destructive"
                         >
                           <LogOut className="h-4 w-4" />
                           Sign Out
@@ -182,12 +240,28 @@ export function Header() {
             <>
               {user ? (
                 <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center gap-3 pb-2">
+                    <UserAvatar name={user.name || user.email} className="h-10 w-10 text-sm" />
+                    <div>
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
                   <Link
                     href="/dashboard"
-                    className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
                     onClick={() => setMobileOpen(false)}
                   >
+                    <LayoutDashboard className="h-4 w-4" />
                     Dashboard
+                  </Link>
+                  <Link
+                    href="/studio"
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Film className="h-4 w-4" />
+                    Studio
                   </Link>
                   <Link
                     href="/profile"
@@ -198,10 +272,9 @@ export function Header() {
                     Profile
                   </Link>
                   <div className="flex items-center gap-2 pt-1">
-                    <span className="text-sm">{user.name || user.email}</span>
                     <Badge variant="secondary" className="text-xs font-mono">
                       {user.plan === "free"
-                        ? `${user.analysesUsed}/${user.analysesLimit}`
+                        ? `${user.analysesUsed}/${user.analysesLimit} analyses`
                         : user.plan}
                     </Badge>
                   </div>
