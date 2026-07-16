@@ -62,7 +62,7 @@ services:
           memory: 256M
 
   minio:
-    image: minio/minio:latest-release
+    image: minio/minio:latest
     container_name: spikeclips-minio
     restart: unless-stopped
     security_opt:

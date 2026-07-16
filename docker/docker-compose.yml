@@ -115,7 +115,7 @@ services:
       - no-new-privileges:true
 
   minio:
-    image: minio/minio:latest-release
+    image: minio/minio:latest
     container_name: spikeclips-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"

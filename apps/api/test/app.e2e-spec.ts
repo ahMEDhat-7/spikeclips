@@ -17,6 +17,7 @@ describe("API (e2e)", () => {
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })
     );
     await app.init();
+    await app.listen(0);
   }, 30000);
 
   afterAll(async () => {
