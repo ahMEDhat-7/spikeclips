@@ -17,6 +17,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-spikeclips}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spikeclips_dev}
       POSTGRES_DB: ${POSTGRES_DB:-spikeclips}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

@@ -11,6 +11,8 @@ services:
       POSTGRES_USER: spikeclips
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spikeclips_dev}
       POSTGRES_DB: spikeclips
+      # postgres 18+ image stores data under a pgdata subdir of PGDATA
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
