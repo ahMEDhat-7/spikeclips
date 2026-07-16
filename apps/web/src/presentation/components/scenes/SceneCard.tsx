@@ -4,18 +4,13 @@ import { ScoredBlock } from "@/domain/entities/job";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatTime } from "@/lib/format";
 
 interface SceneCardProps {
   scene: ScoredBlock;
   index: number;
   isSelected: boolean;
   onToggle: (index: number) => void;
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function SceneCard({
@@ -32,6 +27,14 @@ export function SceneCard({
           : "hover:border-muted-foreground/50 hover:bg-surface-hover"
       }`}
       onClick={() => onToggle(index)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle(index);
+        }
+      }}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">

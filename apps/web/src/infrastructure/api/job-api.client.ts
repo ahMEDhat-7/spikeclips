@@ -1,4 +1,6 @@
 import { JobApiPort, JobResponse, ClipResponse } from "../../domain/ports/job-api.port";
+import { PlatformId } from "../../domain/entities/platform";
+import { OutputFormat, OutputQuality } from "../../domain/entities/export";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -10,9 +12,9 @@ interface ApiResponseError {
 }
 
 export interface StudioExportConfig {
-  platform?: string;
-  format?: string;
-  quality?: string;
+  platform?: PlatformId;
+  format?: OutputFormat;
+  quality?: OutputQuality;
   captions?: Array<{
     text: string;
     font: string;

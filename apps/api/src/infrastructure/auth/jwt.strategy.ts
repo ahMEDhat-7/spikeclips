@@ -9,8 +9,8 @@ interface JwtPayload {
 }
 
 const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret && process.env.NODE_ENV === "production") {
-  throw new Error("JWT_SECRET environment variable is required in production");
+if (!jwtSecret) {
+  throw new Error("JWT_SECRET environment variable is required");
 }
 
 function extractJwtFromCookie(req: Request): string | null {
@@ -26,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: jwtSecret || "spikeclips-dev-secret-change-in-production",
+      secretOrKey: jwtSecret!,
     });
   }
 

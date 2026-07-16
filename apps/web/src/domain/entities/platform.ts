@@ -1,5 +1,7 @@
+export type PlatformId = "youtube-shorts" | "instagram-reels" | "tiktok";
+
 export interface Platform {
-  id: string;
+  id: PlatformId;
   name: string;
   icon: string;
   aspectRatio: string;

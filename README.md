@@ -2,8 +2,8 @@
 
 > Find what viewers actually rewatch — then make it beautiful.
 
-[![CI](https://github.com/ahMEDhat-7/spikeclips/actions/workflows/ci.yml/badge.svg)](https://github.com/ahMEDhat-7/spikeclips/actions/workflows/ci.yml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
+[![CI](https://github.com/ahmedhat/SpikeClip/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmedhat/SpikeClip/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 SpikeClip extracts the most-replayed moments from YouTube videos using **actual viewer heatmap data** — not AI guesses. It identifies spikes in audience replay behavior and reformats those moments into vertical shorts ready for TikTok, YouTube Shorts, and Instagram Reels.
@@ -17,7 +17,7 @@ SpikeClip extracts the most-replayed moments from YouTube videos using **actual 
 | **Frontend** | Next.js 16, React 19, Tailwind 4 | UI for analysis, visualization, and clip download |
 | **Backend** | NestJS 11, Prisma 6, BullMQ | API, job queues, video processing |
 | **Algorithm** | TypeScript (ported from Python) | Spike detection, scene scoring, clip selection |
-| **Storage** | PostgreSQL 16, Redis 7, MinIO | Database, queues, file storage |
+| **Storage** | PostgreSQL 18, Redis 8, MinIO | Database, queues, file storage |
 | **External** | yt-dlp, FFmpeg | YouTube data extraction, video processing |
 
 ---
@@ -35,7 +35,7 @@ SpikeClip extracts the most-replayed moments from YouTube videos using **actual 
 ### 1. Clone & Install
 
 ```bash
-git clone git@github.com:ahMEDhat-7/spikeclips.git
+git clone git@github.com:ahmedhat/SpikeClip.git
 cd spikeclips
 pnpm install
 ```
@@ -123,13 +123,12 @@ presentation/  → Controllers (API), components (Web)
 
 ### Authentication
 
-Cookie-based JWT authentication:
-- `POST /api/auth/register` — Creates account, sets httpOnly cookie
-- `POST /api/auth/login` — Authenticates, sets httpOnly cookie
+Google OAuth authentication (cookie-based JWT):
+- `GET /api/auth/google` — Redirects to Google OAuth
+- `GET /api/auth/google/callback` — Handles Google callback, sets httpOnly cookie
 - `POST /api/auth/logout` — Clears cookie
 - `GET /api/auth/me` — Returns current user (reads from cookie)
 - `PATCH /api/auth/me` — Updates profile
-- `POST /api/auth/change-password` — Changes password
 
 Free tier: 3 analyses/month, 3 scenes max. Pro/Team: unlimited.
 

@@ -5,7 +5,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do NOT** open a public GitHub issue
-2. Email: ahmed.medhat.saad77@gmail.com
+2. Use [GitHub's private vulnerability reporting](https://github.com/ahmedhat/SpikeClip/security/advisories/new)
 3. Include: description, steps to reproduce, potential impact
 4. Expect initial response within 48 hours
 

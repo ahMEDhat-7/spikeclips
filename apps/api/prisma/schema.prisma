@@ -8,18 +8,23 @@ datasource db {
 }
 
 model User {
-  id               String   @id @default(uuid())
-  email            String   @unique
-  passwordHash     String
-  name             String?
-  plan             String   @default("free")
-  stripeCustomerId String?
-  analysesUsed     Int      @default(0)
-  analysesLimit    Int      @default(3)
-  scenesLimit      Int      @default(3)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  jobs             Job[]
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  name                String?
+  oauthProvider       String?
+  oauthProviderId     String?
+  plan                String    @default("free")
+  stripeCustomerId    String?
+  analysesUsed        Int       @default(0)
+  analysesLimit       Int       @default(3)
+  scenesLimit         Int       @default(3)
+  analysesResetAt     DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  jobs                Job[]
+
+  @@index([stripeCustomerId])
+  @@index([oauthProvider, oauthProviderId])
 }
 
 model Job {
@@ -38,8 +43,13 @@ model Job {
   errorMessage     String?
   createdAt        DateTime @default(now())
   completedAt      DateTime?
-  user             User     @relation(fields: [userId], references: [id])
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clips            Clip[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Clip {
@@ -56,5 +66,9 @@ model Clip {
   errorMessage    String?
   createdAt       DateTime @default(now())
   completedAt     DateTime?
-  job             Job      @relation(fields: [jobId], references: [id])
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([status])
+  @@index([jobId, sceneIndex])
 }

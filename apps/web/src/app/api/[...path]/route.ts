@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+const PUBLIC_API_PREFIXES = ["/api/auth/"];
+
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 async function proxyRequest(req: NextRequest) {
   const url = new URL(req.url);
-  const apiPath = url.pathname.replace("/api", "/api");
+  const pathname = url.pathname;
+  const apiPath = pathname;
   const targetUrl = `${API_BASE}${apiPath}${url.search}`;
 
   const headers = new Headers();
@@ -16,6 +23,13 @@ async function proxyRequest(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   if (cookie) {
     headers.set("cookie", cookie);
+  }
+
+  if (!isPublicRoute(pathname)) {
+    const accessToken = req.cookies.get("access_token")?.value;
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const init: RequestInit = {

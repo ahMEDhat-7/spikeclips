@@ -1,44 +1,47 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { jobApi } from "../../infrastructure/api/job-api.client";
-import { Job } from "../../domain/entities/job";
-
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_ATTEMPTS = 120;
+import { Job, JOB_STATUS } from "../../domain/entities/job";
+import { ANALYSIS_POLL_INTERVAL_MS, ANALYSIS_MAX_POLL_ATTEMPTS } from "@/lib/constants";
 
 export function useAnalyzeVideo(onComplete?: () => void) {
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const attemptRef = useRef(0);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
+    attemptRef.current = 0;
   }, []);
 
   const pollJobStatus = useCallback(
-    (jobId: string, attempt: number = 0) => {
+    (jobId: string) => {
       stopPolling();
 
-      if (attempt >= MAX_POLL_ATTEMPTS) {
-        setError("Analysis timed out. Please refresh and try again.");
-        setIsLoading(false);
-        return;
-      }
-
       pollingRef.current = setInterval(async () => {
+        attemptRef.current += 1;
+
+        if (attemptRef.current >= ANALYSIS_MAX_POLL_ATTEMPTS) {
+          stopPolling();
+          setError("Analysis timed out. Please refresh and try again.");
+          setIsLoading(false);
+          return;
+        }
+
         try {
           const updated = await jobApi.getJob(jobId);
           setJob(updated);
 
-          if (updated.status === "completed" || updated.status === "failed") {
+          if (updated.status === JOB_STATUS.COMPLETED || updated.status === JOB_STATUS.FAILED) {
             stopPolling();
             setIsLoading(false);
-            if (updated.status === "completed") {
+            if (updated.status === JOB_STATUS.COMPLETED) {
               onComplete?.();
             }
           }
@@ -47,7 +50,7 @@ export function useAnalyzeVideo(onComplete?: () => void) {
           setIsLoading(false);
           setError("Failed to check analysis status.");
         }
-      }, POLL_INTERVAL_MS);
+      }, ANALYSIS_POLL_INTERVAL_MS);
     },
     [stopPolling, onComplete]
   );
@@ -65,14 +68,14 @@ export function useAnalyzeVideo(onComplete?: () => void) {
         const processedJob = await jobApi.processJob(newJob.id);
         setJob(processedJob);
 
-        if (processedJob.status === "completed") {
+        if (processedJob.status === JOB_STATUS.COMPLETED) {
           setIsLoading(false);
           onComplete?.();
-        } else if (processedJob.status === "processing" || processedJob.status === "pending") {
+        } else if (processedJob.status === JOB_STATUS.PROCESSING || processedJob.status === JOB_STATUS.PENDING) {
           pollJobStatus(processedJob.id);
         } else {
           setIsLoading(false);
-          if (processedJob.status === "failed") {
+          if (processedJob.status === JOB_STATUS.FAILED) {
             setError(processedJob.errorMessage || "Analysis failed.");
           }
         }
@@ -98,7 +101,7 @@ export function useAnalyzeVideo(onComplete?: () => void) {
     try {
       const loaded = await jobApi.getJob(id);
       setJob(loaded);
-      if (loaded.status === "processing" || loaded.status === "pending") {
+      if (loaded.status === JOB_STATUS.PROCESSING || loaded.status === JOB_STATUS.PENDING) {
         pollJobStatus(loaded.id);
       }
     } catch (err) {
@@ -108,6 +111,12 @@ export function useAnalyzeVideo(onComplete?: () => void) {
       setIsLoading(false);
     }
   }, [pollJobStatus]);
+
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
 
   return { job, isLoading, error, analyze, loadJob, reset };
 }

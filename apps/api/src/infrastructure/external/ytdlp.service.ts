@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, RequestTimeoutException } from "@nestjs/common";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import {
@@ -8,6 +8,16 @@ import {
 import { HeatmapSpike } from "@spikeclips/shared";
 
 const execFileAsync = promisify(execFile);
+const YTDLP_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new RequestTimeoutException(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 @Injectable()
 export class YtdlpService implements VideoExtractor {
@@ -16,12 +26,11 @@ export class YtdlpService implements VideoExtractor {
   async extractMetadata(url: string): Promise<VideoMetadata> {
     this.logger.log(`Extracting metadata for: ${url}`);
 
-    const { stdout } = await execFileAsync("yt-dlp", [
-      "-j",
-      "--write-info-json",
-      "--no-download",
-      url,
-    ]);
+    const { stdout } = await withTimeout(
+      execFileAsync("yt-dlp", ["-j", "--write-info-json", "--no-download", url]),
+      YTDLP_TIMEOUT_MS,
+      "yt-dlp metadata extraction"
+    );
 
     const metadata = JSON.parse(stdout);
 
@@ -40,11 +49,11 @@ export class YtdlpService implements VideoExtractor {
   async extractHeatmap(url: string): Promise<HeatmapSpike[]> {
     this.logger.log(`Extracting heatmap for: ${url}`);
 
-    const { stdout } = await execFileAsync("yt-dlp", [
-      "-j",
-      "--no-download",
-      url,
-    ]);
+    const { stdout } = await withTimeout(
+      execFileAsync("yt-dlp", ["-j", "--no-download", url]),
+      YTDLP_TIMEOUT_MS,
+      "yt-dlp heatmap extraction"
+    );
 
     const metadata = JSON.parse(stdout);
     return (metadata.heatmap ?? []) as HeatmapSpike[];
@@ -60,15 +69,19 @@ export class YtdlpService implements VideoExtractor {
       `Downloading section ${startTime}-${endTime} from: ${url}`
     );
 
-    await execFileAsync("yt-dlp", [
-      "-f",
-      "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
-      `--download-sections`,
-      `*${startTime}-${endTime}`,
-      "--force-keyframes-at-cuts",
-      "-o",
-      outputPath,
-      url,
-    ]);
+    await withTimeout(
+      execFileAsync("yt-dlp", [
+        "-f",
+        "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+        `--download-sections`,
+        `*${startTime}-${endTime}`,
+        "--force-keyframes-at-cuts",
+        "-o",
+        outputPath,
+        url,
+      ]),
+      YTDLP_TIMEOUT_MS,
+      "yt-dlp section download"
+    );
   }
 }

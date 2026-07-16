@@ -27,8 +27,8 @@ describe("YoutubeUrl", () => {
   });
 
   it("rejects empty URLs", () => {
-    expect(() => YoutubeUrl.create("")).toThrow("URL cannot be empty");
-    expect(() => YoutubeUrl.create("   ")).toThrow("URL cannot be empty");
+    expect(() => YoutubeUrl.create("")).toThrow("Invalid YouTube URL");
+    expect(() => YoutubeUrl.create("   ")).toThrow("Invalid YouTube URL");
   });
 
   it("isValid returns true for valid URLs", () => {

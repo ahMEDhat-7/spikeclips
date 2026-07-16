@@ -36,6 +36,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = exception.message;
     } else if (!isProduction && exception instanceof Error) {
       message = exception.message;
+    } else if (isProduction) {
+      message = "Internal server error";
     }
 
     this.logger.error(

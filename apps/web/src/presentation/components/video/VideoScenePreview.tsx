@@ -5,25 +5,14 @@ import YouTube from "react-youtube";
 import { Job } from "@/domain/entities/job";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { formatTime } from "@/lib/format";
+import { extractVideoId } from "@/lib/youtube";
+import { VIDEO_UPDATE_INTERVAL_MS } from "@/lib/constants";
 
 interface VideoScenePreviewProps {
   job: Job;
   selectedSceneIndex?: number;
   onSceneSelect?: (index: number) => void;
-}
-
-function extractVideoId(url: string): string | null {
-  const match = url.match(/[?&]v=([^&]+)/);
-  if (match) return match[1];
-  const shortMatch = url.match(/youtu\.be\/([^?]+)/);
-  if (shortMatch) return shortMatch[1];
-  return null;
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export function VideoScenePreview({
@@ -61,6 +50,7 @@ export function VideoScenePreview({
       const state = event.data;
       if (state === 1) {
         setIsPlaying(true);
+        if (timeUpdateRef.current) clearInterval(timeUpdateRef.current);
         timeUpdateRef.current = setInterval(() => {
           const player = playerRef.current?.getInternalPlayer?.();
           if (player) {
@@ -70,7 +60,7 @@ export function VideoScenePreview({
               // player not ready
             }
           }
-        }, 250);
+        }, VIDEO_UPDATE_INTERVAL_MS);
       } else {
         setIsPlaying(false);
         if (timeUpdateRef.current) {
@@ -140,8 +130,8 @@ export function VideoScenePreview({
   if (!videoId) return null;
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-black flex flex-col h-full">
-      <div className="relative flex-1 min-h-0 w-full">
+    <div className="overflow-hidden rounded-lg border bg-black flex flex-col">
+      <div className="relative aspect-video w-full">
         <YouTube
           ref={playerRef}
           videoId={videoId}
@@ -170,7 +160,7 @@ export function VideoScenePreview({
             <SkipBack className="h-3 w-3" />
           </Button>
 
-          <Button variant="ghost" size="sm" onClick={togglePlay} className="h-7 w-7 p-0">
+          <Button variant="ghost" size="sm" onClick={togglePlay} className="h-7 w-7 p-0" aria-label={isPlaying ? "Pause" : "Play"}>
             {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
           </Button>
 

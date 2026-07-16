@@ -2,6 +2,20 @@ export type { ScoredBlock, HeatmapSpike, JobStatus, Clip, ClipStatus } from "@sp
 
 import type { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
 
+export const JOB_STATUS = {
+  PENDING: "pending",
+  PROCESSING: "processing",
+  COMPLETED: "completed",
+  FAILED: "failed",
+} as const;
+
+export const CLIP_STATUS = {
+  PENDING: "pending",
+  PROCESSING: "processing",
+  COMPLETED: "completed",
+  FAILED: "failed",
+} as const;
+
 export interface Job {
   id: string;
   userId: string;

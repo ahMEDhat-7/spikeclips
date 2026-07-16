@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { HeatmapSpike, ScoredBlock } from "@/domain/entities/job";
+import { formatTime } from "@/lib/format";
 
 interface HeatmapChartProps {
   heatmap: HeatmapSpike[];
@@ -23,12 +24,6 @@ interface HeatmapChartProps {
   onChartClick?: (time: number) => void;
   onChartMouseMove?: (time: number | null) => void;
   interactive?: boolean;
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function parseTimeLabel(label: string): number {

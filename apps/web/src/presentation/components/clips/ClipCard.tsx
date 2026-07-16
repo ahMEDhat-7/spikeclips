@@ -1,19 +1,15 @@
 "use client";
 
 import { ClipResponse } from "@/domain/ports/job-api.port";
+import { CLIP_STATUS } from "@/domain/entities/job";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, AlertCircle } from "lucide-react";
+import { formatTime } from "@/lib/format";
 
 interface ClipCardProps {
   clip: ClipResponse;
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function formatFileSize(bytes: number): string {
@@ -24,10 +20,10 @@ function formatFileSize(bytes: number): string {
 
 export function ClipCard({ clip }: ClipCardProps) {
   const statusColors = {
-    pending: "secondary",
-    processing: "secondary",
-    completed: "default",
-    failed: "destructive",
+    [CLIP_STATUS.PENDING]: "secondary",
+    [CLIP_STATUS.PROCESSING]: "secondary",
+    [CLIP_STATUS.COMPLETED]: "default",
+    [CLIP_STATUS.FAILED]: "destructive",
   } as const;
 
   return (
@@ -72,12 +68,12 @@ export function ClipCard({ clip }: ClipCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {clip.status === "processing" && (
+            {clip.status === CLIP_STATUS.PROCESSING && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
-            {clip.status === "completed" && clip.fileUrl && (
+            {clip.status === CLIP_STATUS.COMPLETED && clip.fileUrl && (
               <Button asChild size="sm" variant="outline">
-                <a href={clip.fileUrl} download>
+                <a href={clip.fileUrl} download rel="noopener noreferrer">
                   <Download className="h-4 w-4 mr-1" />
                   Download
                 </a>

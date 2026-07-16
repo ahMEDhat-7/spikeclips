@@ -1,15 +1,22 @@
-import { Injectable, Logger, ForbiddenException } from "@nestjs/common";
-import { writeFile, readFile, mkdir, stat, unlink } from "fs/promises";
+import { Injectable, Logger, OnModuleInit, ForbiddenException } from "@nestjs/common";
+import { writeFile, readFile, mkdir, stat, unlink, access } from "fs/promises";
 import { join, resolve } from "path";
 import { StorageService } from "./storage.interface";
 import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 
 const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
-const SIGNING_SECRET = process.env.CLIP_SIGNING_SECRET || "spikeclips-dev-signing-secret";
 
 @Injectable()
-export class LocalStorageService implements StorageService {
+export class LocalStorageService implements StorageService, OnModuleInit {
   private readonly logger = new Logger(LocalStorageService.name);
+  private signingSecret!: string;
+
+  onModuleInit() {
+    this.signingSecret = process.env.CLIP_SIGNING_SECRET || "";
+    if (!this.signingSecret) {
+      throw new Error("CLIP_SIGNING_SECRET environment variable is required");
+    }
+  }
 
   async upload(file: Buffer, key: string, _contentType: string): Promise<string> {
     const filePath = join(CLIPS_DIR, key);
@@ -45,7 +52,7 @@ export class LocalStorageService implements StorageService {
 
   async getSignedUrl(key: string, expiresInSec: number = 3600): Promise<string> {
     const expires = Math.floor(Date.now() / 1000) + expiresInSec;
-    const signature = createHmac("sha256", SIGNING_SECRET)
+    const signature = createHmac("sha256", this.signingSecret)
       .update(`${key}:${expires}`)
       .digest("hex")
       .slice(0, 32);
@@ -67,7 +74,8 @@ export class LocalStorageService implements StorageService {
   static verifySignature(key: string, expires: number, sig: string): boolean {
     if (Date.now() / 1000 > expires) return false;
 
-    const expected = createHmac("sha256", SIGNING_SECRET)
+    const signingSecret = process.env.CLIP_SIGNING_SECRET || "";
+    const expected = createHmac("sha256", signingSecret)
       .update(`${key}:${expires}`)
       .digest("hex")
       .slice(0, 32);
@@ -76,6 +84,15 @@ export class LocalStorageService implements StorageService {
       return timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"));
     } catch {
       return false;
+    }
+  }
+
+  async healthCheck(): Promise<{ status: string; message?: string }> {
+    try {
+      await access(CLIPS_DIR);
+      return { status: "ok" };
+    } catch {
+      return { status: "error", message: `Clips directory "${CLIPS_DIR}" not accessible` };
     }
   }
 }

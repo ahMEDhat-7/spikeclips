@@ -52,7 +52,7 @@ docs: add API reference
 ## Development Setup
 
 ```bash
-git clone git@github.com:ahMEDhat-7/spikeclips.git
+git clone git@github.com:ahmedhat/SpikeClip.git
 cd spikeclips
 pnpm install
 docker compose -f docker/docker-compose.yml up -d

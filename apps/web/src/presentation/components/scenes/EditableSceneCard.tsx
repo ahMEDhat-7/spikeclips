@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2, GripVertical } from "lucide-react";
 import { EditableScene } from "@/application/hooks/use-scene-editor";
+import { formatTime } from "@/lib/format";
 
 interface EditableSceneCardProps {
   scene: EditableScene;
@@ -13,14 +14,15 @@ interface EditableSceneCardProps {
   onRemove: (index: number) => void;
 }
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
 function parseTimeInput(value: string): number | null {
   const parts = value.split(":");
+  if (parts.length === 3) {
+    const hours = parseInt(parts[0], 10);
+    const mins = parseInt(parts[1], 10);
+    const secs = parseInt(parts[2], 10);
+    if (isNaN(hours) || isNaN(mins) || isNaN(secs)) return null;
+    return hours * 3600 + mins * 60 + secs;
+  }
   if (parts.length === 2) {
     const mins = parseInt(parts[0], 10);
     const secs = parseInt(parts[1], 10);

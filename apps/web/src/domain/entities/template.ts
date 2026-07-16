@@ -23,6 +23,17 @@ export interface EditTemplate {
   config: TemplateConfig;
 }
 
+export type TemplateCategoryFilter = TemplateCategory | "all";
+
+export const TEMPLATE_CATEGORIES: { id: TemplateCategoryFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "kinetic", label: "Kinetic" },
+  { id: "collage", label: "Collage" },
+  { id: "split", label: "Split" },
+  { id: "pov", label: "POV" },
+  { id: "loop", label: "Loop" },
+];
+
 export const TEXT_ANIMATIONS: { id: TextAnimation; label: string }[] = [
   { id: "pop", label: "Pop" },
   { id: "slide", label: "Slide" },

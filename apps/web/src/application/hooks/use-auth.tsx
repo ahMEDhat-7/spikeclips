@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useEffect, createContext, useContext, ReactNode } from "react";
 import { authApi } from "../../infrastructure/api/auth-api.client";
+import { toastWarning } from "@/lib/toast";
+import { PlanTier } from "@spikeclips/shared";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  plan: string;
+  plan: PlanTier;
   analysesUsed: number;
   analysesLimit: number;
   scenesLimit: number;
@@ -17,10 +19,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  updateProfile: (data: { name?: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -38,7 +38,7 @@ function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: string; analysesUsed: number; analysesLimit: number; scenesLimit: number; createdAt?: string }) => {
+  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: PlanTier; analysesUsed: number; analysesLimit: number; scenesLimit: number; createdAt?: string }) => {
     setUser({
       id: profile.id,
       email: profile.email,
@@ -59,7 +59,11 @@ function useAuthProvider(): AuthContextType {
       } else {
         setUser(null);
       }
-    } catch {
+    } catch (err) {
+      const isNetworkError = err instanceof TypeError && err.message.includes("fetch");
+      if (isNetworkError) {
+        toastWarning("Connection issue. Please check your network.");
+      }
       setUser(null);
     }
   }, [setUserFromProfile]);
@@ -80,44 +84,22 @@ function useAuthProvider(): AuthContextType {
       .finally(() => setIsLoading(false));
   }, [setUserFromProfile]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await authApi.login(email, password);
-    setUser({
-      id: result.userId,
-      email: result.email,
-      name: result.name,
-      plan: result.plan,
-      analysesUsed: result.analysesUsed,
-      analysesLimit: result.analysesLimit,
-      scenesLimit: result.scenesLimit,
-    });
-  }, []);
-
-  const register = useCallback(async (email: string, password: string, name: string) => {
-    const result = await authApi.register(email, password, name);
-    setUser({
-      id: result.userId,
-      email: result.email,
-      name: result.name,
-      plan: result.plan,
-      analysesUsed: result.analysesUsed,
-      analysesLimit: result.analysesLimit,
-      scenesLimit: result.scenesLimit,
-    });
-  }, []);
-
   const logout = useCallback(async () => {
-    await authApi.logout();
+    try {
+      await authApi.logout();
+    } catch {
+      // proceed with client-side logout even if API call fails
+    }
     setUser(null);
     window.location.href = "/login";
   }, []);
 
-  const updateProfile = useCallback(async (data: { name?: string; email?: string }) => {
+  const updateProfile = useCallback(async (data: { name?: string }) => {
     const updated = await authApi.updateProfile(data);
     setUserFromProfile(updated);
   }, [setUserFromProfile]);
 
-  return { user, isLoading, login, register, logout, updateProfile, refreshUser };
+  return { user, isLoading, logout, updateProfile, refreshUser };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

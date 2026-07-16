@@ -1,4 +1,4 @@
-import { ScoredBlock, HeatmapSpike, JobStatus } from "../entities/job";
+import { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "../entities/job";
 
 export interface JobApiPort {
   createJob(url: string): Promise<JobResponse>;
@@ -37,7 +37,7 @@ export interface ClipResponse {
   startTime: number;
   endTime: number;
   peakIntensity?: number;
-  status: string;
+  status: ClipStatus;
   fileUrl?: string;
   fileSize?: number;
   duration?: number;

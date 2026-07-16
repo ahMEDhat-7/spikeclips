@@ -1,25 +1,24 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: spikeclips-postgres
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-spikeclips}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spikeclips_dev}
       POSTGRES_DB: ${POSTGRES_DB:-spikeclips}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    command: >
-      postgres
-        -c shared_buffers=256MB
-        -c effective_cache_size=768MB
-        -c work_mem=4MB
-        -c maintenance_work_mem=128MB
-        -c max_connections=50
-        -c wal_buffers=8MB
-        -c checkpoint_completion_target=0.9
-        -c random_page_cost=1.1
-        -c effective_io_concurrency=200
     networks:
       - backend
     healthcheck:
@@ -33,9 +32,13 @@ services:
           memory: 1G
 
   redis:
-    image: redis:8-alpine
+    image: redis:7-alpine
     container_name: spikeclips-redis
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command: >
       redis-server
         --requirepass ${REDIS_PASSWORD:-spikeclips_dev_redis}
@@ -61,6 +64,10 @@ services:
     image: minio/minio:latest
     container_name: spikeclips-minio
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}

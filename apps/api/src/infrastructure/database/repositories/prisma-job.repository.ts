@@ -33,10 +33,10 @@ export class PrismaJobRepository implements JobRepository {
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
-        ...(data.status && { status: data.status }),
-        ...(data.scenes && { scenes: data.scenes as unknown as Prisma.InputJsonValue }),
-        ...(data.errorMessage && { errorMessage: data.errorMessage }),
-        ...(data.completedAt && { completedAt: data.completedAt }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.scenes !== undefined && { scenes: data.scenes as unknown as Prisma.InputJsonValue }),
+        ...(data.errorMessage !== undefined && { errorMessage: data.errorMessage }),
+        ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
       },
     });
     return JobMapper.toEntity(updated);

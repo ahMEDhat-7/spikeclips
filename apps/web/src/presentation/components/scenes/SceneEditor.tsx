@@ -8,26 +8,23 @@ import { EditableSceneCard } from "./EditableSceneCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, RotateCcw, Scissors, Loader2 } from "lucide-react";
+import { formatTime } from "@/lib/format";
 
 interface SceneEditorProps {
   heatmap: HeatmapSpike[];
   suggestedScenes: ScoredBlock[];
   scenesLimit: number;
-  onExport: (scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>) => void;
-  isExporting?: boolean;
   onSceneSelect?: (index: number) => void;
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+  showExport?: boolean;
+  onExport?: (scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>) => void;
+  isExporting?: boolean;
 }
 
 export function SceneEditor({
   heatmap,
   suggestedScenes,
   scenesLimit,
+  showExport = false,
   onExport,
   isExporting = false,
   onSceneSelect,
@@ -65,6 +62,7 @@ export function SceneEditor({
   }, []);
 
   const handleExport = useCallback(() => {
+    if (!onExport) return;
     onExport(
       scenes.map((s) => ({
         start_time: s.start_time,
@@ -148,7 +146,7 @@ export function SceneEditor({
         ))}
       </div>
 
-      {scenes.length > 0 && (
+      {showExport && scenes.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t gap-3">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="font-mono">

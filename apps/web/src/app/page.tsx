@@ -1,41 +1,13 @@
-"use client";
-
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnimatedHeatmapHero } from "@/presentation/components/features/AnimatedHeatmapHero";
-import { BarChart3, Scissors, Zap, Shield, ArrowRight } from "lucide-react";
-
-const features = [
-  {
-    icon: BarChart3,
-    title: "Real viewer data",
-    description:
-      "Uses actual YouTube heatmap data — not AI guesses — to find moments viewers truly rewatch.",
-  },
-  {
-    icon: Scissors,
-    title: "Vertical reformatting",
-    description:
-      "Automatically crops and reformats clips to 9:16 for TikTok, Shorts, and Reels.",
-  },
-  {
-    icon: Zap,
-    title: "Instant analysis",
-    description:
-      "Heatmap extraction in under 10 seconds. Spike merging algorithm runs in milliseconds.",
-  },
-  {
-    icon: Shield,
-    title: "Data-driven decisions",
-    description:
-      "Stop guessing which moments to clip. Let actual viewer behavior guide your edits.",
-  },
-];
+import { ArrowRight } from "lucide-react";
+import { LANDING_FEATURES } from "@/domain/data/features";
 
 const stats = [
-  { value: "10K+", label: "Analyses completed" },
-  { value: "50K+", label: "Clips generated" },
+  { value: "3-60s", label: "Clip duration range" },
+  { value: "9:16", label: "Vertical format" },
   { value: "<10s", label: "Analysis time" },
   { value: "99.9%", label: "Uptime" },
 ];
@@ -57,18 +29,17 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Button asChild size="lg" className="group">
-                <Link href="/register">
+                <Link href="/login">
                   Start for free
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/features">See how it works</Link>
+                <a href="#how-it-works">See how it works</a>
               </Button>
             </div>
           </div>
 
-          {/* Animated heatmap visualization */}
           <div className="mt-12">
             <AnimatedHeatmapHero />
           </div>
@@ -92,7 +63,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-20">
+      <section id="how-it-works" className="container mx-auto px-4 sm:px-6 py-20 scroll-mt-20">
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold">How it works</h2>
           <p className="text-muted-foreground mt-2">
@@ -150,14 +121,14 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {features.map((feature) => (
+            {LANDING_FEATURES.map((feature) => (
               <Card
                 key={feature.title}
                 className="group hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-6 space-y-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <feature.icon className="h-5 w-5" />
+                    <feature.icon className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="font-semibold text-lg">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -177,9 +148,14 @@ export default function HomePage() {
         <p className="text-muted-foreground max-w-lg mx-auto">
           Free tier includes 3 analyses per month. No credit card required.
         </p>
-        <Button asChild size="lg">
-          <Link href="/register">Get started free</Link>
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button asChild size="lg">
+            <Link href="/login">Get started free</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link href="/pricing">See pricing</Link>
+          </Button>
+        </div>
       </section>
     </main>
   );

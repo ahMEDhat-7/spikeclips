@@ -3,11 +3,15 @@ import {
   Get,
   Param,
   Query,
+  Req,
   Res,
   Inject,
+  Logger,
   NotFoundException,
   ForbiddenException,
+  ParseUUIDPipe,
 } from "@nestjs/common";
+import { Request } from "express";
 import {
   ApiTags,
   ApiOperation,
@@ -24,12 +28,15 @@ import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
 import { Roles } from "../../infrastructure/auth/roles.decorator";
+import { Public } from "../../infrastructure/auth/jwt-auth.guard";
 
 const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
 
 @ApiTags("Clips")
 @Controller("clips")
 export class ClipsController {
+  private readonly logger = new Logger(ClipsController.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService
@@ -44,7 +51,15 @@ export class ClipsController {
   @ApiParam({ name: "jobId", description: "Job UUID" })
   @ApiResponse({ status: 200, description: "List of clips", type: [ClipResponseDto] })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async findByJobId(@Param("jobId") jobId: string): Promise<ClipResponseDto[]> {
+  @ApiResponse({ status: 403, description: "Forbidden — job does not belong to you" })
+  async findByJobId(
+    @Param("jobId", ParseUUIDPipe) jobId: string,
+    @Req() req: Request & { user?: { userId?: string } }
+  ): Promise<ClipResponseDto[]> {
+    const job = await this.prisma.job.findUnique({ where: { id: jobId }, select: { userId: true } });
+    if (!job) throw new NotFoundException(`Job ${jobId} not found`);
+    if (job.userId !== req.user?.userId) throw new ForbiddenException("Job does not belong to you");
+
     const clips = await this.prisma.clip.findMany({
       where: { jobId },
       orderBy: { sceneIndex: "asc" },
@@ -79,10 +94,19 @@ export class ClipsController {
   @ApiResponse({ status: 404, description: "Clip not found or not ready" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 403, description: "Pro or Team plan required" })
-  async download(@Param("id") id: string, @Res() res: Response): Promise<void> {
+  async download(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() req: Request & { user?: { userId?: string } },
+    @Res() res: Response
+  ): Promise<void> {
     const clip = await this.prisma.clip.findUnique({ where: { id } });
     if (!clip) {
       throw new NotFoundException(`Clip ${id} not found`);
+    }
+
+    const job = await this.prisma.job.findUnique({ where: { id: clip.jobId }, select: { userId: true } });
+    if (!job || job.userId !== req.user?.userId) {
+      throw new ForbiddenException("Clip does not belong to you");
     }
 
     if (clip.status !== "completed" || !clip.fileUrl) {
@@ -94,6 +118,7 @@ export class ClipsController {
   }
 
   @Get("download/:key")
+  @Public()
   @ApiOperation({
     summary: "Serve a clip file via signed URL",
     description: "Downloads a clip file from local storage after verifying the signed URL.",
@@ -117,7 +142,7 @@ export class ClipsController {
       throw new ForbiddenException("Invalid or expired signature");
     }
 
-    const filePath = join(CLIPS_DIR, decodeURIComponent(key));
+    const filePath = join(CLIPS_DIR, key);
     const resolved = resolve(filePath);
     if (!resolved.startsWith(resolve(CLIPS_DIR))) {
       throw new ForbiddenException("Invalid file path");
@@ -125,12 +150,21 @@ export class ClipsController {
 
     try {
       const fileStat = await stat(resolved);
+      const ext = resolved.split(".").pop()?.toLowerCase() || "mp4";
+      const contentType = ext === "webm" ? "video/webm" : "video/mp4";
       res.set({
-        "Content-Type": "video/mp4",
+        "Content-Type": contentType,
         "Content-Length": fileStat.size.toString(),
-        "Content-Disposition": `attachment; filename="${key.split("/").pop()}"`,
+        "Content-Disposition": `attachment; filename="${key.split("/").pop()?.replace(/[^a-zA-Z0-9._-]/g, "_") || `clip.${ext}`}"`,
       });
-      createReadStream(resolved).pipe(res);
+      createReadStream(resolved)
+        .on("error", (err) => {
+          this.logger.error(`Stream error reading ${key}: ${err.message}`);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to read clip file" });
+          }
+        })
+        .pipe(res);
     } catch {
       throw new NotFoundException("File not found");
     }

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { Header } from "@/presentation/components/layout/Header";
+import { Footer } from "@/presentation/components/layout/Footer";
 import { Providers } from "@/application/providers/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -75,11 +77,19 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
+            >
+              Skip to content
+            </a>
             <div className="relative flex min-h-screen flex-col">
               <Header />
-              <main className="flex-1">{children}</main>
+              <main id="main-content" className="flex-1">{children}</main>
+              <Footer />
             </div>
           </Providers>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

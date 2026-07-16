@@ -88,8 +88,15 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
           {!user && (
+            <>
+              <NavLink href="/features" active={isActive("/features")}>Features</NavLink>
+              <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
+              <NavLink href="/about" active={isActive("/about")}>About</NavLink>
+            </>
+          )}
+          {user && (
             <>
               <NavLink href="/features" active={isActive("/features")}>Features</NavLink>
               <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
@@ -105,13 +112,16 @@ export function Header() {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setDropdownOpen(!dropdownOpen)}
+                      aria-expanded={dropdownOpen}
+                      aria-haspopup="true"
+                      aria-label="User menu"
                       className="flex items-center gap-2 rounded-full transition-all hover:ring-2 hover:ring-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <UserAvatar name={user.name || user.email} className="h-9 w-9 text-sm" />
                     </button>
 
                     {dropdownOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-background shadow-lg p-1.5 space-y-0.5">
+                      <div role="menu" className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-background shadow-lg p-1.5 space-y-0.5">
                         <div className="px-3 py-2 border-b mb-1">
                           <p className="text-sm font-medium truncate">{user.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -178,7 +188,7 @@ export function Header() {
                     <Link href="/login">Sign In</Link>
                   </Button>
                   <Button asChild size="sm">
-                    <Link href="/register">Sign Up</Link>
+                    <Link href="/login">Sign Up</Link>
                   </Button>
                 </div>
               )}
@@ -207,6 +217,7 @@ export function Header() {
           className="md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
         >
           {mobileOpen ? (
             <X className="h-5 w-5" />
@@ -217,7 +228,7 @@ export function Header() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t bg-background px-4 py-4 space-y-3">
+        <nav className="md:hidden border-t bg-background px-4 py-4 space-y-3" aria-label="Mobile navigation">
           {!user && (
             <>
               <Link
@@ -233,6 +244,13 @@ export function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 Pricing
+              </Link>
+              <Link
+                href="/about"
+                className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+              >
+                About
               </Link>
             </>
           )}
@@ -318,7 +336,7 @@ export function Header() {
                   </Button>
                   <Button asChild size="sm" className="w-full">
                     <Link
-                      href="/register"
+                      href="/login"
                       onClick={() => setMobileOpen(false)}
                     >
                       Sign Up
@@ -346,7 +364,7 @@ export function Header() {
               {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </Button>
           )}
-        </div>
+        </nav>
       )}
     </header>
   );

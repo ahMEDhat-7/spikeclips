@@ -17,6 +17,7 @@ export class PrismaUserRepository implements UserRepository {
     analysesUsed: number;
     analysesLimit: number;
     scenesLimit: number;
+    analysesResetAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): User {
@@ -29,6 +30,7 @@ export class PrismaUserRepository implements UserRepository {
       user.analysesUsed,
       user.analysesLimit,
       user.scenesLimit,
+      user.analysesResetAt ?? undefined,
       user.createdAt,
       user.updatedAt
     );
@@ -46,12 +48,11 @@ export class PrismaUserRepository implements UserRepository {
     return this.toEntity(user);
   }
 
-  async create(user: User, passwordHash?: string): Promise<User> {
+  async create(user: User): Promise<User> {
     const created = await this.prisma.user.create({
       data: {
         id: user.id,
         email: user.email,
-        passwordHash: passwordHash ?? "",
         name: user.name,
         plan: user.plan,
         stripeCustomerId: user.stripeCustomerId,
@@ -68,9 +69,9 @@ export class PrismaUserRepository implements UserRepository {
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
-        ...(data.name && { name: data.name }),
-        ...(data.plan && { plan: data.plan }),
-        ...(data.stripeCustomerId && { stripeCustomerId: data.stripeCustomerId }),
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.plan !== undefined && { plan: data.plan }),
+        ...(data.stripeCustomerId !== undefined && { stripeCustomerId: data.stripeCustomerId }),
         ...(data.analysesUsed !== undefined && { analysesUsed: data.analysesUsed }),
         ...(data.analysesLimit !== undefined && { analysesLimit: data.analysesLimit }),
         ...(data.scenesLimit !== undefined && { scenesLimit: data.scenesLimit }),

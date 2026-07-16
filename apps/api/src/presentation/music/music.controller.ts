@@ -28,6 +28,18 @@ interface MulterFile {
   size: number;
 }
 
+const ALLOWED_AUDIO_MIMES = new Set([
+  "audio/mpeg",
+  "audio/wav",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/x-wav",
+  "audio/webm",
+]);
+
+const ALLOWED_EXTENSIONS = new Set(["mp3", "wav", "ogg", "m4a", "webm"]);
+
 @ApiTags("Music")
 @Controller("music")
 export class MusicController {
@@ -40,18 +52,25 @@ export class MusicController {
   @ApiResponse({ status: 201, description: "Music uploaded successfully", schema: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, url: { type: "string" }, size: { type: "number" } } } })
   @ApiResponse({ status: 400, description: "Invalid file type or size" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req: Express.Request, file: MulterFile, cb: (error: Error | null, accept: boolean) => void) => {
+        const ext = file.originalname.split(".").pop()?.toLowerCase() || "";
+        if (ALLOWED_AUDIO_MIMES.has(file.mimetype) && ALLOWED_EXTENSIONS.has(ext)) {
+          cb(null, true);
+        } else {
+          cb(new HttpException("Invalid file type. Supported: MP3, WAV, OGG, M4A, WebM", HttpStatus.BAD_REQUEST), false);
+        }
+      },
+    })
+  )
   async upload(
     @UploadedFile() file: MulterFile | undefined,
     @Req() req: Request & { user: { userId: string } }
   ) {
     if (!file) {
       throw new HttpException("No file provided", HttpStatus.BAD_REQUEST);
-    }
-
-    const allowedMimes = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/x-m4a"];
-    if (!allowedMimes.includes(file.mimetype)) {
-      throw new HttpException("Invalid file type. Supported: MP3, WAV, OGG, M4A", HttpStatus.BAD_REQUEST);
     }
 
     if (file.size > 10 * 1024 * 1024) {
@@ -67,9 +86,17 @@ export class MusicController {
   @ApiParam({ name: "key", description: "Music file key (URL-encoded)", example: "user-id%2Fabc-track.mp3" })
   @ApiResponse({ status: 200, description: "Music deleted successfully", schema: { type: "object", properties: { deleted: { type: "boolean", example: true } } } })
   @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Forbidden — cannot delete another user's music" })
   @ApiResponse({ status: 404, description: "Music file not found" })
-  async delete(@Param("key") key: string) {
-    await this.musicService.deleteMusic(decodeURIComponent(key));
+  async delete(
+    @Param("key") key: string,
+    @Req() req: Request & { user: { userId: string } }
+  ) {
+    const decodedKey = decodeURIComponent(key);
+    if (!decodedKey.startsWith(`${req.user.userId}/`)) {
+      throw new HttpException("Forbidden", HttpStatus.FORBIDDEN);
+    }
+    await this.musicService.deleteMusic(decodedKey);
     return { deleted: true };
   }
 }

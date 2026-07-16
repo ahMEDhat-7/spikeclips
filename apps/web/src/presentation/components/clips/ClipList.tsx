@@ -1,6 +1,7 @@
 "use client";
 
 import { ClipResponse } from "@/domain/ports/job-api.port";
+import { CLIP_STATUS } from "@/domain/entities/job";
 import { ClipCard } from "./ClipCard";
 import {
   Card,
@@ -18,7 +19,7 @@ interface ClipListProps {
 export function ClipList({ clips }: ClipListProps) {
   if (clips.length === 0) return null;
 
-  const completedClips = clips.filter((c) => c.status === "completed");
+  const completedClips = clips.filter((c) => c.status === CLIP_STATUS.COMPLETED);
   const totalSize = completedClips.reduce(
     (sum, c) => sum + (c.fileSize || 0),
     0

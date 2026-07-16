@@ -1,3 +1,5 @@
+import { InvalidUrlException } from "../exceptions/invalid-url.exception";
+
 export class YoutubeUrl {
   private static readonly PATTERNS = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([^&?#]+)/,
@@ -7,12 +9,12 @@ export class YoutubeUrl {
 
   static create(url: string): YoutubeUrl {
     if (!url || url.trim().length === 0) {
-      throw new Error("URL cannot be empty");
+      throw new InvalidUrlException(url || "");
     }
 
     const isValid = YoutubeUrl.PATTERNS.some((p) => p.test(url));
     if (!isValid) {
-      throw new Error("Invalid YouTube URL format");
+      throw new InvalidUrlException(url);
     }
 
     return new YoutubeUrl(url);

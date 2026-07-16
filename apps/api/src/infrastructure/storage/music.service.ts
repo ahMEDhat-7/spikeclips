@@ -11,7 +11,6 @@ interface UploadFile {
 @Injectable()
 export class MusicService {
   private readonly logger = new Logger(MusicService.name);
-  private readonly BUCKET = "music";
 
   constructor(@Inject(STORAGE_SERVICE) private readonly storage: StorageService) {}
 
@@ -19,7 +18,11 @@ export class MusicService {
     file: UploadFile,
     userId: string
   ): Promise<{ id: string; name: string; url: string; size: number }> {
-    const id = `${userId}/${crypto.randomUUID()}-${file.originalname}`;
+    const sanitizedName = file.originalname
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .slice(0, 100);
+    const id = `${userId}/${crypto.randomUUID()}-${sanitizedName}`;
     await this.storage.upload(file.buffer, id, file.mimetype);
     const url = await this.storage.getSignedUrl(id, 3600);
 
@@ -34,11 +37,7 @@ export class MusicService {
   }
 
   async deleteMusic(key: string): Promise<void> {
-    try {
-      await this.storage.delete(key);
-      this.logger.log(`Music deleted: ${key}`);
-    } catch (err) {
-      this.logger.warn(`Failed to delete music ${key}: ${err instanceof Error ? err.message : err}`);
-    }
+    await this.storage.delete(key);
+    this.logger.log(`Music deleted: ${key}`);
   }
 }

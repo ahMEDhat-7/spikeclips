@@ -2,91 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  BarChart3,
-  Scissors,
-  Zap,
-  Shield,
-  Activity,
-  Layers,
-  Clock,
-  Target,
-} from "lucide-react";
+import { DETAILED_FEATURES } from "@/domain/data/features";
 
 export const metadata: Metadata = {
   title: "Features",
   description:
     "Discover how SpikeClip uses real YouTube heatmap data to identify the most-replayed moments and create engaging vertical shorts.",
 };
-
-const features = [
-  {
-    icon: BarChart3,
-    title: "Real Heatmap Data",
-    description:
-      "Extracts actual viewer engagement data directly from YouTube's heatmap API. Every data point represents real human attention — not algorithmic guesses.",
-    details: [
-      "Direct YouTube heatmap extraction",
-      "Per-second viewer engagement scores",
-      "Normalized intensity mapping",
-    ],
-  },
-  {
-    icon: Activity,
-    title: "Spike Merging Algorithm",
-    description:
-      "Our proprietary algorithm intelligently merges adjacent high-intensity moments into coherent clips, respecting natural scene boundaries.",
-    details: [
-      "Gap-tolerant spike clustering",
-      "Intensity-based scoring",
-      "Configurable clip duration (3-60s)",
-    ],
-  },
-  {
-    icon: Scissors,
-    title: "Vertical Reformatting",
-    description:
-      "Automatically crops and reformats landscape videos to 9:16 vertical format optimized for TikTok, YouTube Shorts, and Instagram Reels.",
-    details: [
-      "Smart center-crop algorithm",
-      "9:16 aspect ratio optimization",
-      "Keyframe-accurate cuts",
-    ],
-  },
-  {
-    icon: Zap,
-    title: "Instant Analysis",
-    description:
-      "Heatmap extraction completes in under 10 seconds. The spike merging algorithm runs in milliseconds. From URL to clips in under a minute.",
-    details: [
-      "Sub-10s heatmap extraction",
-      "Millisecond algorithm execution",
-      "Parallel clip generation",
-    ],
-  },
-  {
-    icon: Target,
-    title: "Data-Driven Decisions",
-    description:
-      "Stop guessing which moments to clip. Let actual viewer behavior guide your content strategy with quantified engagement metrics.",
-    details: [
-      "Peak intensity scoring",
-      "Confidence levels per scene",
-      "Exportable analytics",
-    ],
-  },
-  {
-    icon: Layers,
-    title: "Multi-Platform Export",
-    description:
-      "Download clips ready for every major short-form platform. One analysis, multiple content opportunities.",
-    details: [
-      "TikTok-optimized format",
-      "YouTube Shorts ready",
-      "Instagram Reels compatible",
-    ],
-  },
-];
 
 const steps = [
   {
@@ -131,11 +53,11 @@ export default function FeaturesPage() {
 
       <section className="container mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature) => (
+          {DETAILED_FEATURES.map((feature) => (
             <Card key={feature.title} className="group hover:shadow-lg transition-shadow">
               <CardContent className="p-6 space-y-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <feature.icon className="h-6 w-6" />
+                  <feature.icon className="h-6 w-6" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -147,7 +69,7 @@ export default function FeaturesPage() {
                       key={detail}
                       className="flex items-center gap-2 text-xs text-muted-foreground"
                     >
-                      <div className="h-1 w-1 rounded-full bg-secondary" />
+                      <div className="h-1 w-1 rounded-full bg-secondary" aria-hidden="true" />
                       {detail}
                     </li>
                   ))}
@@ -167,7 +89,7 @@ export default function FeaturesPage() {
             {steps.map((step, index) => (
               <div key={step.number} className="relative">
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border" />
+                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border" aria-hidden="true" />
                 )}
                 <div className="space-y-3">
                   <span className="text-3xl font-mono font-bold text-primary/20">
@@ -192,7 +114,7 @@ export default function FeaturesPage() {
           Free tier includes 3 analyses per month. No credit card required.
         </p>
         <Button asChild size="lg">
-          <Link href="/register">Get started free</Link>
+          <Link href="/login">Get started free</Link>
         </Button>
       </section>
     </main>

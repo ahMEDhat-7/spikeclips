@@ -1,10 +1,14 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger } from "@nestjs/common";
+import { Injectable, UnauthorizedException, Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { randomUUID } from "crypto";
 import { PrismaService } from "../database/prisma.service";
-import * as bcrypt from "bcrypt";
 
-const BCRYPT_ROUNDS = 12;
+interface OAuthProfile {
+  provider: string;
+  providerId: string;
+  email: string;
+  name: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -15,11 +19,7 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  async register(
-    email: string,
-    password: string,
-    name: string
-  ): Promise<{
+  async findOrCreateOAuthUser(profile: OAuthProfile): Promise<{
     accessToken: string;
     userId: string;
     email: string;
@@ -29,73 +29,62 @@ export class AuthService {
     analysesLimit: number;
     scenesLimit: number;
   }> {
-    const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      throw new ConflictException("Email already registered");
-    }
-
-    const userId = randomUUID();
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-
-    const user = await this.prisma.user.create({
-      data: {
-        id: userId,
-        email,
-        passwordHash,
-        name,
-        plan: "free",
-        analysesUsed: 0,
-        analysesLimit: 3,
-        scenesLimit: 3,
-      },
+    // Try to find by provider+id first
+    let user = await this.prisma.user.findFirst({
+      where: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
     });
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-    });
-
-    this.logger.log(`User registered: ${user.email}`);
-
-    return {
-      accessToken,
-      userId: user.id,
-      email: user.email,
-      name: user.name ?? "",
-      plan: user.plan,
-      analysesUsed: user.analysesUsed,
-      analysesLimit: user.analysesLimit,
-      scenesLimit: user.scenesLimit,
-    };
-  }
-
-  async login(
-    email: string,
-    password: string
-  ): Promise<{
-    accessToken: string;
-    userId: string;
-    email: string;
-    name: string;
-    plan: string;
-    analysesUsed: number;
-    analysesLimit: number;
-    scenesLimit: number;
-  }> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      // Try to find by email and link the OAuth provider
+      const existingByEmail = await this.prisma.user.findUnique({ where: { email: profile.email } });
+      if (existingByEmail) {
+        user = await this.prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
+        });
+      } else {
+        // Create new user — use upsert to handle race conditions
+        try {
+          user = await this.prisma.user.create({
+            data: {
+              id: randomUUID(),
+              email: profile.email,
+              name: profile.name,
+              oauthProvider: profile.provider,
+              oauthProviderId: profile.providerId,
+              plan: "free",
+              analysesUsed: 0,
+              analysesLimit: 3,
+              scenesLimit: 3,
+            },
+          });
+        } catch (err: unknown) {
+          // Race condition: another request created the user, try finding again
+          if (
+            err instanceof Error &&
+            "code" in err &&
+            (err as { code?: string }).code === "P2002"
+          ) {
+            user = await this.prisma.user.findFirst({
+              where: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
+            });
+            if (!user) {
+              user = await this.prisma.user.findUnique({ where: { email: profile.email } });
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
     }
 
-    const passwordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordValid) {
-      throw new UnauthorizedException("Invalid credentials");
+    if (!user) {
+      throw new UnauthorizedException("Failed to create or find user");
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-    });
+    const accessToken = this.jwtService.sign({ sub: user.id, email: user.email });
+
+    this.logger.log(`OAuth login: ${profile.provider} user=${this.maskEmail(user.email)}`);
 
     return {
       accessToken,
@@ -134,23 +123,42 @@ export class AuthService {
     };
   }
 
-  async incrementAnalyses(userId: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { analysesUsed: { increment: 1 } },
-    });
-  }
-
   async checkCanAnalyze(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return false;
     if (user.plan === "pro" || user.plan === "team") return true;
-    return user.analysesUsed < user.analysesLimit;
+    await this.checkAndResetMonthlyUsage(user.id, user.analysesResetAt);
+    const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT 1 as count FROM "User"
+      WHERE id = ${userId} AND ("analysesUsed" < "analysesLimit" OR "analysesLimit" = -1)
+    `;
+    return result.length > 0;
+  }
+
+  async incrementAnalyses(userId: string): Promise<boolean> {
+    await this.checkAndResetMonthlyUsage(userId);
+    const result = await this.prisma.$executeRaw`
+      UPDATE "User" SET "analysesUsed" = "analysesUsed" + 1
+      WHERE id = ${userId}
+        AND ("analysesUsed" < "analysesLimit" OR "analysesLimit" = -1)
+    `;
+    return result > 0;
+  }
+
+  private async checkAndResetMonthlyUsage(userId: string, resetAt?: Date | null): Promise<void> {
+    const now = new Date();
+    const shouldReset = !resetAt || (resetAt.getMonth() !== now.getMonth() || resetAt.getFullYear() !== now.getFullYear());
+    if (shouldReset) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { analysesUsed: 0, analysesResetAt: now },
+      });
+    }
   }
 
   async updateProfile(
     userId: string,
-    data: { name?: string; email?: string }
+    data: { name?: string }
   ): Promise<{
     id: string;
     email: string;
@@ -166,22 +174,14 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
 
-    if (data.email && data.email !== user.email) {
-      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
-      if (existing) {
-        throw new ConflictException("Email already in use");
-      }
-    }
-
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.email !== undefined && { email: data.email }),
       },
     });
 
-    this.logger.log(`Profile updated for user: ${updated.email}`);
+    this.logger.log(`Profile updated for user: ${this.maskEmail(updated.email)}`);
 
     return {
       id: updated.id,
@@ -195,27 +195,9 @@ export class AuthService {
     };
   }
 
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string
-  ): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new UnauthorizedException("User not found");
-    }
-
-    const passwordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!passwordValid) {
-      throw new UnauthorizedException("Current password is incorrect");
-    }
-
-    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash: newHash },
-    });
-
-    this.logger.log(`Password changed for user: ${user.email}`);
+  private maskEmail(email: string): string {
+    const [local, domain] = email.split("@");
+    if (!domain) return "***";
+    return `${local[0]}***@${domain}`;
   }
 }

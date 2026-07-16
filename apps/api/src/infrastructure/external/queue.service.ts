@@ -72,7 +72,15 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.analysisQueue.close();
-    await this.exportQueue.close();
+    try {
+      await this.analysisQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close analysis queue: ${err}`);
+    }
+    try {
+      await this.exportQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close export queue: ${err}`);
+    }
   }
 }

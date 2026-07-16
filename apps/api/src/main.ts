@@ -1,17 +1,32 @@
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import cookieParser = require("cookie-parser");
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./presentation/filters/exception.filter";
 import { LoggingInterceptor } from "./presentation/interceptors/logging.interceptor";
+import { SentryModule } from "./infrastructure/sentry/sentry.module";
 import { startWorkers, stopWorkers } from "./infrastructure/workers";
+import { PrismaService } from "./infrastructure/database/prisma.service";
+import { FFMPEG_SERVICE } from "./infrastructure/external/external.module";
+
+const logger = new Logger("Bootstrap");
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  if (process.env.SENTRY_DSN) {
+    await SentryModule.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || "development",
+      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
+    });
+  }
+
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.setGlobalPrefix("api");
   app.use(cookieParser());
+  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -51,24 +66,35 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
+  if (process.env.NODE_ENV?.toLowerCase() !== "production") {
+    SwaggerModule.setup("api/docs", app, document);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`API running on http://localhost:${port}`);
-  console.log(`Swagger docs at http://localhost:${port}/api/docs`);
+  logger.log(`API running on http://localhost:${port}`);
+  if (process.env.NODE_ENV?.toLowerCase() !== "production") {
+    logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
+  }
 
   try {
-    const { PrismaService } = await import("./infrastructure/database/prisma.service");
-    const { FfmpegService } = await import("./infrastructure/external/ffmpeg.service");
     const prisma = app.get(PrismaService);
     const storage = app.get("STORAGE_SERVICE");
-    const ffmpeg = new FfmpegService();
+    const ffmpeg = app.get(FFMPEG_SERVICE);
     startWorkers(prisma, storage, ffmpeg);
   } catch (err) {
-    console.warn("Failed to start workers (Redis may be unavailable):", err instanceof Error ? err.message : err);
+    logger.warn(`Failed to start workers (Redis may be unavailable): ${err instanceof Error ? err.message : err}`);
   }
 }
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error(`Uncaught Exception: ${err.message}`, err.stack);
+  process.exit(1);
+});
 
 process.on("SIGTERM", async () => {
   await stopWorkers();

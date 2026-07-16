@@ -43,14 +43,14 @@ export interface AlgorithmConfig {
 }
 
 export const DEFAULT_ALGORITHM_CONFIG: AlgorithmConfig = {
-  gap_tolerance: 8.0,
+  gap_tolerance: 5.0,
   intensity_tolerance: 0.25,
   min_intensity_cutoff: 0.40,
   min_clip_duration: 3.0,
   max_clip_duration: 60.0,
   target_duration_range: [15.0, 60.0],
   top_n: 3,
-  min_spacing: 10.0,
+  min_spacing: 5.0,
   weight_peak: 0.4,
   weight_avg: 0.4,
   weight_duration_fit: 0.2,

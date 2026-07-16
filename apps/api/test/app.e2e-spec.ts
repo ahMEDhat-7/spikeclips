@@ -51,7 +51,7 @@ describe("API (e2e)", () => {
         .expect(400);
     });
 
-    it("GET /api/jobs/:id returns 400 for invalid UUID format with non-existent job", () => {
+    it("GET /api/jobs/:id returns 404 for nonexistent job", () => {
       return request(app.getHttpServer())
         .get("/api/jobs/nonexistent")
         .expect(404);

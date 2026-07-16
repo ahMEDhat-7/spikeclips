@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { StudioStep } from "@/application/hooks/use-studio";
+import { StudioStep, STEP_LABELS } from "@/domain/entities/studio";
+import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,21 +24,12 @@ interface StudioToolbarProps {
   onGoNext: () => void;
   onGoPrev: () => void;
   onGoToStep: (step: StudioStep) => void;
-  onExport: (config?: { format: string; quality: string }) => void;
+  onExport: (config?: { format: OutputFormat; quality: OutputQuality }) => void;
   onReset: () => void;
   isExporting?: boolean;
-  outputFormat?: string;
-  outputQuality?: string;
+  outputFormat?: OutputFormat;
+  outputQuality?: OutputQuality;
 }
-
-const STEP_LABELS: Record<StudioStep, string> = {
-  platform: "Platform",
-  scenes: "Scenes",
-  captions: "Captions",
-  music: "Music",
-  templates: "Templates",
-  export: "Export",
-};
 
 export function StudioToolbar({
   currentStep,
@@ -53,61 +45,58 @@ export function StudioToolbar({
   onExport,
   onReset,
   isExporting,
-  outputFormat = "mp4",
-  outputQuality = "1080p",
+  outputFormat = DEFAULT_OUTPUT_FORMAT,
+  outputQuality = DEFAULT_OUTPUT_QUALITY,
 }: StudioToolbarProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between px-3 py-1.5 border-b bg-background">
+      <div className="flex items-center gap-2">
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <LayoutDashboard className="h-4 w-4" />
+          <LayoutDashboard className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Dashboard</span>
         </Link>
-        <div className="h-4 w-px bg-border" />
+        <div className="h-3 w-px bg-border" />
         {showResetConfirm ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Reset all?</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">Reset?</span>
             <Button
               variant="destructive"
               size="sm"
-              className="h-7 text-xs"
-              onClick={() => {
-                onReset();
-                setShowResetConfirm(false);
-              }}
+              className="h-6 px-2 text-[11px]"
+              onClick={() => { onReset(); setShowResetConfirm(false); }}
             >
               Yes
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 text-xs"
+              className="h-6 px-2 text-[11px]"
               onClick={() => setShowResetConfirm(false)}
             >
               No
             </Button>
           </div>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(true)}>
-            <RotateCcw className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(true)} className="h-7 px-2 text-xs">
+            <RotateCcw className="h-3 w-3 mr-1" />
             Reset
           </Button>
         )}
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {steps.map((step, i) => {
           const isCurrent = i === currentStepIndex;
           const isCompleted = i < currentStepIndex;
           return (
             <div key={step} className="flex items-center">
               <button
-                className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-medium transition-all ${
                   isCurrent
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
                     : isCompleted
@@ -116,12 +105,13 @@ export function StudioToolbar({
                 }`}
                 onClick={() => onGoToStep(step)}
                 title={STEP_LABELS[step]}
+                aria-label={STEP_LABELS[step]}
               >
                 {i + 1}
               </button>
               {i < steps.length - 1 && (
                 <div
-                  className={`w-4 h-0.5 mx-0.5 ${
+                  className={`w-2.5 h-0.5 mx-0.5 ${
                     i < currentStepIndex ? "bg-primary/40" : "bg-muted"
                   }`}
                 />
@@ -129,11 +119,14 @@ export function StudioToolbar({
             </div>
           );
         })}
+        <span className="text-[11px] font-medium text-muted-foreground ml-1 hidden sm:inline">
+          {STEP_LABELS[currentStep]}
+        </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={onGoPrev} disabled={!canGoPrev}>
-          <ArrowLeft className="h-4 w-4" />
+      <div className="flex items-center gap-1.5">
+        <Button variant="outline" size="sm" onClick={onGoPrev} disabled={!canGoPrev} className="h-7 px-2 text-xs">
+          <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
 
         {isLastStep ? (
@@ -141,15 +134,15 @@ export function StudioToolbar({
             size="sm"
             onClick={() => onExport({ format: outputFormat, quality: outputQuality })}
             disabled={isExporting}
-            className="bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold"
+            className="h-7 px-3 text-xs bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold"
           >
-            <Download className="h-4 w-4 mr-1" />
+            <Download className="h-3.5 w-3.5 mr-1" />
             Export
           </Button>
         ) : (
-          <Button size="sm" onClick={onGoNext} disabled={!canGoNext}>
+          <Button size="sm" onClick={onGoNext} disabled={!canGoNext} className="h-7 px-2.5 text-xs">
             Next
-            <ArrowRight className="h-4 w-4 ml-1" />
+            <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         )}
       </div>

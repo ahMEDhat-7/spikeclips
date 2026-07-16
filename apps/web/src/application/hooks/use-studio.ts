@@ -7,44 +7,78 @@ import { MusicTrack, createMusicTrack } from "@/domain/entities/music";
 import { EditTemplate } from "@/domain/entities/template";
 import { TEMPLATES } from "@/domain/data/templates";
 import { ScoredBlock } from "@/domain/entities/job";
+import { StudioStep, STUDIO_STEPS } from "@/domain/entities/studio";
+import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 
-export type StudioStep = "platform" | "scenes" | "captions" | "music" | "templates" | "export";
-
-export interface StudioState {
-  platform: Platform | null;
-  scenes: ScoredBlock[];
-  selectedScenes: number[];
+export interface SceneEditState {
   captions: Caption[];
   musicTrack: MusicTrack | null;
   originalVolume: number;
   selectedTemplate: EditTemplate | null;
+}
+
+export interface StudioState {
+  platform: Platform | null;
+  scenes: ScoredBlock[];
+  selectedSceneIndex: number | null;
+  sceneEdits: Map<number, SceneEditState>;
   currentStep: StudioStep;
 }
 
-const STEPS: StudioStep[] = ["platform", "scenes", "captions", "music", "templates", "export"];
+const STEPS = STUDIO_STEPS;
+
+function createDefaultSceneEdit(): SceneEditState {
+  return {
+    captions: [],
+    musicTrack: null,
+    originalVolume: 1,
+    selectedTemplate: null,
+  };
+}
 
 export function useStudio() {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [scenes, setScenes] = useState<ScoredBlock[]>([]);
-  const [selectedScenes, setSelectedScenes] = useState<number[]>([]);
-  const [captions, setCaptions] = useState<Caption[]>([]);
-  const [musicTrack, setMusicTrack] = useState<MusicTrack | null>(null);
-  const [originalVolume, setOriginalVolume] = useState(1);
-  const [selectedTemplate, setSelectedTemplate] = useState<EditTemplate | null>(null);
+  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
+  const [sceneEdits, setSceneEdits] = useState<Map<number, SceneEditState>>(new Map());
   const [currentStep, setCurrentStep] = useState<StudioStep>("platform");
-  const [outputFormat, setOutputFormat] = useState<string>("mp4");
-  const [outputQuality, setOutputQuality] = useState<string>("1080p");
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>(DEFAULT_OUTPUT_FORMAT);
+  const [outputQuality, setOutputQuality] = useState<OutputQuality>(DEFAULT_OUTPUT_QUALITY);
 
   const currentStepIndex = STEPS.indexOf(currentStep);
   const canGoNext = useMemo(() => {
     if (currentStep === "platform") return platform !== null;
-    if (currentStep === "scenes") return selectedScenes.length > 0;
+    if (currentStep === "scenes") return selectedSceneIndex !== null;
     return true;
-  }, [currentStep, platform, selectedScenes]);
+  }, [currentStep, platform, selectedSceneIndex]);
 
   const canGoPrev = currentStepIndex > 0;
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === STEPS.length - 1;
+
+  const getSceneEdit = useCallback(
+    (index: number): SceneEditState => {
+      return sceneEdits.get(index) ?? createDefaultSceneEdit();
+    },
+    [sceneEdits]
+  );
+
+  const updateSceneEdit = useCallback(
+    (index: number, updates: Partial<SceneEditState>) => {
+      setSceneEdits((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(index) ?? createDefaultSceneEdit();
+        next.set(index, { ...existing, ...updates });
+        return next;
+      });
+    },
+    []
+  );
+
+  const currentSceneEdit = useMemo(
+    () => (selectedSceneIndex !== null ? getSceneEdit(selectedSceneIndex) : null),
+    [selectedSceneIndex, getSceneEdit]
+  );
 
   const goNext = useCallback(() => {
     if (canGoNext && !isLastStep) {
@@ -64,65 +98,104 @@ export function useStudio() {
 
   const initFromJob = useCallback((jobScenes: ScoredBlock[]) => {
     setScenes(jobScenes);
-    setSelectedScenes(jobScenes.map((_, i) => i));
+    setSelectedSceneIndex(null);
+    setSceneEdits(new Map());
   }, []);
 
-  const toggleSceneSelection = useCallback((index: number) => {
-    setSelectedScenes((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index].sort()
-    );
-  }, []);
+  const selectScene = useCallback(
+    (index: number) => {
+      setSelectedSceneIndex(index);
+      setSceneEdits((prev) => {
+        if (prev.has(index)) return prev;
+        const next = new Map(prev);
+        next.set(index, createDefaultSceneEdit());
+        return next;
+      });
+      setCurrentStep("captions");
+    },
+    []
+  );
 
-  const selectAllScenes = useCallback(() => {
-    setSelectedScenes(scenes.map((_, i) => i));
-  }, [scenes]);
+  const addCaption = useCallback(
+    (caption?: Partial<Caption>) => {
+      if (selectedSceneIndex === null) return;
+      const edit = getSceneEdit(selectedSceneIndex);
+      const newCaption = createCaption({ ...caption, sceneIndex: selectedSceneIndex });
+      updateSceneEdit(selectedSceneIndex, {
+        captions: [...edit.captions, newCaption],
+      });
+    },
+    [selectedSceneIndex, getSceneEdit, updateSceneEdit]
+  );
 
-  const deselectAllScenes = useCallback(() => {
-    setSelectedScenes([]);
-  }, []);
+  const updateCaption = useCallback(
+    (id: string, updates: Partial<Caption>) => {
+      if (selectedSceneIndex === null) return;
+      const edit = getSceneEdit(selectedSceneIndex);
+      updateSceneEdit(selectedSceneIndex, {
+        captions: edit.captions.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      });
+    },
+    [selectedSceneIndex, getSceneEdit, updateSceneEdit]
+  );
 
-  const addCaption = useCallback((caption?: Partial<Caption>) => {
-    setCaptions((prev) => [...prev, createCaption(caption)]);
-  }, []);
+  const removeCaption = useCallback(
+    (id: string) => {
+      if (selectedSceneIndex === null) return;
+      const edit = getSceneEdit(selectedSceneIndex);
+      updateSceneEdit(selectedSceneIndex, {
+        captions: edit.captions.filter((c) => c.id !== id),
+      });
+    },
+    [selectedSceneIndex, getSceneEdit, updateSceneEdit]
+  );
 
-  const updateCaption = useCallback((id: string, updates: Partial<Caption>) => {
-    setCaptions((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
-  }, []);
+  const setMusic = useCallback(
+    (track: MusicTrack | null) => {
+      if (selectedSceneIndex === null) return;
+      updateSceneEdit(selectedSceneIndex, { musicTrack: track });
+    },
+    [selectedSceneIndex, updateSceneEdit]
+  );
 
-  const removeCaption = useCallback((id: string) => {
-    setCaptions((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const setOriginalVolume = useCallback(
+    (volume: number) => {
+      if (selectedSceneIndex === null) return;
+      updateSceneEdit(selectedSceneIndex, { originalVolume: volume });
+    },
+    [selectedSceneIndex, updateSceneEdit]
+  );
 
-  const setMusic = useCallback((track: MusicTrack | null) => {
-    setMusicTrack(track);
-  }, []);
-
-  const selectTemplate = useCallback((template: EditTemplate | null) => {
-    setSelectedTemplate(template);
-  }, []);
+  const selectTemplate = useCallback(
+    (template: EditTemplate | null) => {
+      if (selectedSceneIndex === null) return;
+      updateSceneEdit(selectedSceneIndex, { selectedTemplate: template });
+    },
+    [selectedSceneIndex, updateSceneEdit]
+  );
 
   const reset = useCallback(() => {
     setPlatform(null);
     setScenes([]);
-    setSelectedScenes([]);
-    setCaptions([]);
-    setMusicTrack(null);
-    setOriginalVolume(1);
-    setSelectedTemplate(null);
+    setSelectedSceneIndex(null);
+    setSceneEdits(new Map());
     setCurrentStep("platform");
-    setOutputFormat("mp4");
-    setOutputQuality("1080p");
+    setOutputFormat(DEFAULT_OUTPUT_FORMAT);
+    setOutputQuality(DEFAULT_OUTPUT_QUALITY);
   }, []);
 
   return {
     platform,
     setPlatform,
     scenes,
-    selectedScenes,
-    captions,
-    musicTrack,
-    originalVolume,
-    selectedTemplate,
+    selectedSceneIndex,
+    selectedScenes: selectedSceneIndex !== null ? [selectedSceneIndex] : [],
+    currentSceneEdit,
+    sceneEdits,
+    captions: currentSceneEdit?.captions ?? [],
+    musicTrack: currentSceneEdit?.musicTrack ?? null,
+    originalVolume: currentSceneEdit?.originalVolume ?? 1,
+    selectedTemplate: currentSceneEdit?.selectedTemplate ?? null,
     currentStep,
     currentStepIndex,
     steps: STEPS,
@@ -134,9 +207,7 @@ export function useStudio() {
     goPrev,
     goToStep,
     initFromJob,
-    toggleSceneSelection,
-    selectAllScenes,
-    deselectAllScenes,
+    selectScene,
     addCaption,
     updateCaption,
     removeCaption,

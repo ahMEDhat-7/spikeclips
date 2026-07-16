@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -13,24 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/application/hooks/use-auth";
-import { Loader2, User, Shield } from "lucide-react";
+import { Loader2, User } from "lucide-react";
+import { SUCCESS_MESSAGE_TIMEOUT_MS } from "@/lib/constants";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isLoading: authLoading, updateProfile, refreshUser } = useAuth();
+  const profileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -41,62 +35,58 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       setName(user.name || "");
-      setEmail(user.email || "");
     }
   }, [user]);
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    return () => {
+      if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
+    };
+  }, []);
+
+  const handleProfileSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileError(null);
     setProfileSuccess(false);
     setProfileSaving(true);
 
     try {
-      await updateProfile({ name, email });
+      await updateProfile({ name });
       await refreshUser();
       setProfileSuccess(true);
-      setTimeout(() => setProfileSuccess(false), 3000);
+      profileTimerRef.current = setTimeout(() => setProfileSuccess(false), SUCCESS_MESSAGE_TIMEOUT_MS);
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : "Update failed");
     } finally {
       setProfileSaving(false);
     }
-  };
-
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match");
-      return;
-    }
-
-    setPasswordSaving(true);
-
-    try {
-      const { authApi } = await import("../../infrastructure/api/auth-api.client");
-      await authApi.changePassword({ currentPassword, newPassword });
-      setPasswordSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setTimeout(() => setPasswordSuccess(false), 3000);
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : "Password change failed");
-    } finally {
-      setPasswordSaving(false);
-    }
-  };
+  }, [name, updateProfile, refreshUser]);
 
   if (authLoading) {
     return (
-      <main className="container mx-auto p-4 sm:p-6">
+      <main className="container mx-auto p-4 sm:p-6" aria-busy="true" aria-live="polite">
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-          <div className="h-64 bg-muted rounded-xl animate-pulse" />
-          <div className="h-64 bg-muted rounded-xl animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-64 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="rounded-xl border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 bg-muted rounded animate-pulse" />
+              <div className="h-5 w-40 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <div className="h-4 w-12 bg-muted rounded animate-pulse" />
+                <div className="h-9 w-full bg-muted rounded animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-12 bg-muted rounded animate-pulse" />
+                <div className="h-9 w-full bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="h-9 w-32 bg-muted rounded animate-pulse" />
+          </div>
         </div>
       </main>
     );
@@ -117,11 +107,11 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
+              <User className="h-5 w-5 text-primary" aria-hidden="true" />
               <CardTitle>Account Information</CardTitle>
             </div>
             <CardDescription>
-              Update your name and email address
+              Update your display name
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -137,30 +127,32 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Name
-                  </label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  required
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Email
+                </label>
+                <Input
+                  value={user.email}
+                  disabled
+                  className="opacity-60"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Email is managed by your Google account
+                </p>
               </div>
 
               <div className="flex items-center gap-4 pt-2">
@@ -181,86 +173,6 @@ export default function ProfilePage() {
                   </span>
                 </div>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <CardTitle>Change Password</CardTitle>
-            </div>
-            <CardDescription>
-              Update your password to keep your account secure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              {passwordError && (
-                <div className="p-3 text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-lg">
-                  {passwordError}
-                </div>
-              )}
-              {passwordSuccess && (
-                <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg dark:text-green-400 dark:bg-green-950 dark:border-green-800">
-                  Password changed successfully
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label htmlFor="currentPassword" className="text-sm font-medium">
-                  Current Password
-                </label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  minLength={8}
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="newPassword" className="text-sm font-medium">
-                    New Password
-                  </label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium">
-                    Confirm Password
-                  </label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" disabled={passwordSaving}>
-                {passwordSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Changing...
-                  </>
-                ) : (
-                  "Change Password"
-                )}
-              </Button>
             </form>
           </CardContent>
         </Card>

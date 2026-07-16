@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const protectedRoutes = ["/studio", "/dashboard", "/profile"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/studio")) {
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  if (isProtected) {
     const token = request.cookies.get("access_token")?.value;
 
     if (!token) {
       const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
+      const redirect = pathname.startsWith("/") && !pathname.includes("://")
+        ? pathname
+        : "/dashboard";
+      loginUrl.searchParams.set("callbackUrl", redirect);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -17,5 +24,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/studio/:path*"],
+  matcher: ["/studio/:path*", "/dashboard/:path*", "/profile/:path*"],
 };

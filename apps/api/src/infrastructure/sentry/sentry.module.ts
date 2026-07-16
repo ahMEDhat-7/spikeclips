@@ -1,4 +1,4 @@
-import { Provider, Global } from "@nestjs/common";
+import { Provider, Global, Logger } from "@nestjs/common";
 
 interface SentryConfig {
   dsn: string;
@@ -34,7 +34,7 @@ export class SentryModule {
         tracesSampleRate: config.tracesSampleRate,
       });
     } catch {
-      console.warn("Sentry not available — error tracking disabled");
+      new Logger("SentryModule").warn("Sentry not available — error tracking disabled");
     }
   }
 }

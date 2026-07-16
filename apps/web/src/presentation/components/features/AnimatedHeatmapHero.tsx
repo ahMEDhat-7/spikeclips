@@ -2,12 +2,8 @@
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
+import { formatTime } from "@/lib/format";
+import { HERO_ANIMATION_DURATION_MS } from "@/lib/constants";
 
 export function AnimatedHeatmapHero({
   className,
@@ -20,7 +16,7 @@ export function AnimatedHeatmapHero({
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
 
-  const duration = 12000;
+  const duration = HERO_ANIMATION_DURATION_MS;
 
   useEffect(() => {
     const container = containerRef.current;

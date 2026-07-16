@@ -4,22 +4,28 @@ import { PassportModule } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./jwt.strategy";
+import { GoogleStrategy } from "./strategies/google.strategy";
 
 const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret && process.env.NODE_ENV === "production") {
-  throw new Error("JWT_SECRET environment variable is required in production");
+if (!jwtSecret) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+
+const oauthStrategies = [];
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  oauthStrategies.push(GoogleStrategy);
 }
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
-      secret: jwtSecret || "spikeclips-dev-secret-change-in-production",
+      secret: jwtSecret!,
       signOptions: { expiresIn: "15m" },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, ...oauthStrategies],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

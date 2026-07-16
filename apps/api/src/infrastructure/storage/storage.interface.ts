@@ -5,4 +5,5 @@ export interface StorageService {
   uploadFromFile(filePath: string, key: string, contentType: string): Promise<string>;
   getSignedUrl(key: string, expiresInSec?: number): Promise<string>;
   delete(key: string): Promise<void>;
+  healthCheck?(): Promise<{ status: string; message?: string }>;
 }

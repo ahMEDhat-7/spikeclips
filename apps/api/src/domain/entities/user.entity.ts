@@ -10,11 +10,13 @@ export class User {
     public analysesUsed: number = 0,
     public analysesLimit: number = 3,
     public scenesLimit: number = 3,
+    public analysesResetAt?: Date,
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date()
   ) {}
 
   canAnalyze(): boolean {
+    if (this.analysesLimit === -1) return true;
     return this.analysesUsed < this.analysesLimit;
   }
 

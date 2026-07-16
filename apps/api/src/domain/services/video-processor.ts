@@ -5,6 +5,8 @@ export interface CaptionOverlay {
   color: string;
   position: string;
   animation: string;
+  startFrame?: number;
+  endFrame?: number;
 }
 
 export interface MusicMixConfig {
@@ -43,7 +45,14 @@ export interface VideoProcessor {
     videoPath: string,
     audioPath: string,
     outputPath: string,
-    config: MusicMixConfig
+    config: MusicMixConfig,
+    videoDuration?: number
+  ): Promise<void>;
+
+  applyTemplateEffects(
+    inputPath: string,
+    outputPath: string,
+    templateConfig: Record<string, unknown>
   ): Promise<void>;
 
   getDuration(filePath: string): Promise<number>;

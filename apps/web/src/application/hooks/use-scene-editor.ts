@@ -36,6 +36,7 @@ export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: numb
 
   const finishAddScene = useCallback((time: number) => {
     if (addStart === null) return;
+    if (!canAddMore) return;
     const start = Math.min(addStart, time);
     const end = Math.max(addStart, time);
 

@@ -1,13 +1,35 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { writeFile, unlink } from "fs/promises";
+import { join } from "path";
 import {
   VideoProcessor,
   CaptionOverlay,
   MusicMixConfig,
 } from "../../domain/services/video-processor";
+import { generateSrt } from "./srt-generator";
 
 const execFileAsync = promisify(execFile);
+const TMP_DIR = "/tmp/spikeclips-ffmpeg";
+const FFMPEG_TIMEOUT_MS = 300_000; // 5 minutes
+
+const FONT_MAP: Record<string, string> = {
+  inter: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+  impact: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  bebas: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  playfair: "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+  mono: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+};
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`FFmpeg timeout: ${label} exceeded ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 @Injectable()
 export class FfmpegService implements VideoProcessor {
@@ -22,15 +44,26 @@ export class FfmpegService implements VideoProcessor {
     this.logger.log(`Trimming ${startTime}-${endTime} to ${outputPath}`);
     const duration = endTime - startTime;
 
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-ss", String(startTime),
-      "-i", inputPath,
-      "-t", String(duration),
-      "-c:v", "libx264",
-      "-c:a", "aac",
-      outputPath,
-    ]);
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-ss", String(startTime),
+          "-i", inputPath,
+          "-t", String(duration),
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-movflags", "+faststart",
+          "-c:a", "aac",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "trim"
+      );
+    } catch (err) {
+      this.logger.error(`Trim failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
   }
 
   async reformatToVertical(
@@ -44,16 +77,27 @@ export class FfmpegService implements VideoProcessor {
     this.logger.log(`Reformatting to ${width}x${height}: ${outputPath}`);
     const duration = endTime - startTime;
 
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-ss", String(startTime),
-      "-i", inputPath,
-      "-t", String(duration),
-      "-vf", `crop=ih*9/16:ih,scale=${width}:${height}`,
-      "-c:v", "libx264",
-      "-c:a", "aac",
-      outputPath,
-    ]);
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-ss", String(startTime),
+          "-i", inputPath,
+          "-t", String(duration),
+          "-vf", `crop=ih*9/16:ih,scale=${width}:${height}`,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-movflags", "+faststart",
+          "-c:a", "aac",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "reformat"
+      );
+    } catch (err) {
+      this.logger.error(`Reformat failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
   }
 
   async overlayCaptions(
@@ -67,12 +111,51 @@ export class FfmpegService implements VideoProcessor {
       return;
     }
 
+    const fps = 30;
+
+    // Try SRT-based rendering first (industry standard)
+    const srtPath = join(TMP_DIR, `${Date.now()}-captions.srt`);
+    const srtContent = generateSrt(captions, fps, videoDuration);
+    await writeFile(srtPath, srtContent, "utf-8");
+
+    try {
+      const forceStyle = `FontSize=20,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Shadow=1,Alignment=2,MarginV=40`;
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-i", inputPath,
+          "-vf", `subtitles=${srtPath}:force_style='${forceStyle}'`,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-movflags", "+faststart",
+          "-c:a", "copy",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "captions-srt"
+      );
+      await unlink(srtPath).catch(() => {});
+      return;
+    } catch {
+      this.logger.warn("SRT subtitles filter failed, falling back to drawtext");
+    }
+
+    // Fallback: drawtext with per-caption timing
     const filters: string[] = [];
     for (const cap of captions) {
       const escapedText = cap.text
         .replace(/\\/g, "\\\\")
+        .replace(/%/g, "%%")
+        .replace(/\$/g, "\\$")
+        .replace(/\[/g, "\\[")
+        .replace(/\]/g, "\\]")
         .replace(/'/g, "'\\\\\\''")
-        .replace(/:/g, "\\:");
+        .replace(/:/g, "\\:")
+        .replace(/\n/g, " ");
+
+      const fontSize = Math.round(cap.size * 0.5);
+      const fontFile = FONT_MAP[cap.font] ?? FONT_MAP.inter;
+      const color = cap.color.replace("#", "0x");
 
       let yExpr: string;
       switch (cap.position) {
@@ -81,52 +164,160 @@ export class FfmpegService implements VideoProcessor {
         default: yExpr = "(h-text_h)/2";
       }
 
+      const startFrame = cap.startFrame ?? 0;
+      const endFrame = cap.endFrame ?? Math.round(fps * videoDuration);
+      const startSec = startFrame / fps;
+      const endSec = endFrame / fps;
+
       filters.push(
-        `drawtext=text='${escapedText}':fontsize=${cap.size}:fontcolor=${cap.color}:x=(w-text_w)/2:y=${yExpr}:enable='between(t,0,${videoDuration})'`
+        `drawtext=text='${escapedText}'` +
+        `:fontfile=${fontFile}` +
+        `:fontsize=${fontSize}` +
+        `:fontcolor=${color}` +
+        `:x=(w-text_w)/2` +
+        `:y=${yExpr}` +
+        `:enable='between(t\\,${startSec.toFixed(3)}\\,${endSec.toFixed(3)})'`
       );
     }
 
     const filterComplex = filters.join(",");
 
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-i", inputPath,
-      "-vf", filterComplex,
-      "-c:v", "libx264",
-      "-c:a", "copy",
-      outputPath,
-    ]);
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-i", inputPath,
+          "-vf", filterComplex,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-movflags", "+faststart",
+          "-c:a", "copy",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "captions-drawtext"
+      );
+    } catch (err) {
+      this.logger.error(`Caption overlay failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
+
+    await unlink(srtPath).catch(() => {});
   }
 
   async mixAudio(
     videoPath: string,
     musicPath: string,
     outputPath: string,
-    config: MusicMixConfig
+    config: MusicMixConfig,
+    videoDuration?: number
   ): Promise<void> {
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-i", videoPath,
-      "-i", musicPath,
-      "-filter_complex",
-      `[0:a]volume=${config.originalVolume}[orig];` +
-      `[1:a]volume=${config.volume},afade=t=in:d=${config.fadeIn},afade=t=out:st=999:d=${config.fadeOut}[music];` +
-      `[orig][music]amix=inputs=2:duration=first[aout]`,
-      "-map", "0:v",
-      "-map", "[aout]",
-      "-c:v", "copy",
-      "-c:a", "aac",
-      outputPath,
-    ]);
+    const duration = videoDuration ?? await this.getDuration(videoPath);
+    const fadeOutStart = Math.max(0, duration - config.fadeOut);
+
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-i", videoPath,
+          "-i", musicPath,
+          "-filter_complex",
+          `[0:a]volume=${config.originalVolume}[orig];` +
+          `[1:a]volume=${config.volume},` +
+          `afade=t=in:d=${config.fadeIn},` +
+          `afade=t=out:st=${fadeOutStart.toFixed(3)}:d=${config.fadeOut}[music];` +
+          `[orig][music]amix=inputs=2:duration=first:normalize=0[aout]`,
+          "-map", "0:v",
+          "-map", "[aout]",
+          "-shortest",
+          "-c:v", "copy",
+          "-c:a", "aac",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "mix-audio"
+      );
+    } catch (err) {
+      this.logger.error(`Audio mix failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
+  }
+
+  async applyTemplateEffects(
+    inputPath: string,
+    outputPath: string,
+    templateConfig: Record<string, unknown>
+  ): Promise<void> {
+    const filters: string[] = [];
+
+    const overlayEffects = templateConfig.overlayEffects as string[] | undefined;
+    const layout = templateConfig.layout as string | undefined;
+
+    if (overlayEffects?.includes("vignette")) {
+      filters.push("vignette=PI/4");
+    }
+
+    if (layout === "split-horizontal") {
+      filters.push("drawbox=x=0:y=ih/2:w=iw:h=2:color=white@0.3:t=fill");
+    }
+
+    if (layout === "split-vertical") {
+      filters.push("drawbox=x=iw/2:y=0:w=2:h=ih:color=white@0.3:t=fill");
+    }
+
+    if (layout === "grid") {
+      filters.push("drawbox=x=0:y=ih/2:w=iw:h=2:color=white@0.3:t=fill");
+      filters.push("drawbox=x=iw/2:y=0:w=2:h=ih:color=white@0.3:t=fill");
+    }
+
+    if (filters.length === 0) {
+      await execFileAsync("cp", [inputPath, outputPath]);
+      return;
+    }
+
+    const filterComplex = filters.join(",");
+
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", [
+          "-y",
+          "-i", inputPath,
+          "-vf", filterComplex,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-movflags", "+faststart",
+          "-c:a", "copy",
+          outputPath,
+        ]),
+        FFMPEG_TIMEOUT_MS,
+        "template-effects"
+      );
+    } catch (err) {
+      this.logger.error(`Template effects failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
   }
 
   async getDuration(filePath: string): Promise<number> {
-    const { stdout } = await execFileAsync("ffprobe", [
-      "-v", "error",
-      "-show_entries", "format=duration",
-      "-of", "default=noprint_wrappers=1:nokey=1",
-      filePath,
-    ]);
-    return parseFloat(stdout.trim());
+    try {
+      const { stdout } = await withTimeout(
+        execFileAsync("ffprobe", [
+          "-v", "error",
+          "-show_entries", "format=duration",
+          "-of", "default=noprint_wrappers=1:nokey=1",
+          filePath,
+        ]),
+        30_000,
+        "get-duration"
+      );
+      const duration = parseFloat(stdout.trim());
+      if (isNaN(duration)) {
+        throw new Error(`Invalid duration from ffprobe: ${stdout}`);
+      }
+      return duration;
+    } catch (err) {
+      this.logger.error(`Get duration failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
   }
 }

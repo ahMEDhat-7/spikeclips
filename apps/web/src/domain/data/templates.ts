@@ -86,12 +86,89 @@ export const TEMPLATES: EditTemplate[] = [
       overlayEffects: ["seamless-loop", "crossfade-blend"],
     },
   },
+  {
+    id: "countdown",
+    name: "Countdown Timer",
+    description:
+      "A dramatic countdown from 5 or 3 with bold numbers, sound effects, and flash transitions. Creates urgency and anticipation for reveals, drops, or key moments.",
+    category: "kinetic",
+    preview: "/templates/countdown.svg",
+    config: {
+      textAnimation: "pop",
+      transitionIn: "zoom",
+      transitionOut: "cut",
+      layout: "full",
+      textPosition: "center",
+      textStyle: "bold",
+      overlayEffects: ["countdown-numbers", "flash-transition"],
+    },
+  },
+  {
+    id: "quote-card",
+    name: "Quote Cards",
+    description:
+      "Elegant text overlay on a semi-transparent background with attribution. Perfect for highlighting memorable quotes, tips, or key takeaways from longer content.",
+    category: "kinetic",
+    preview: "/templates/quote.svg",
+    config: {
+      textAnimation: "fade",
+      transitionIn: "fade",
+      transitionOut: "fade",
+      layout: "full",
+      textPosition: "center",
+      textStyle: "shadow",
+      overlayEffects: ["quote-marks", "bg-overlay"],
+    },
+  },
+  {
+    id: "tutorial-steps",
+    name: "Tutorial Steps",
+    description:
+      "Numbered step indicators with progress bar. Each step gets a title card and transition. Ideal for how-to content, recipes, DIY, and educational clips.",
+    category: "kinetic",
+    preview: "/templates/tutorial.svg",
+    config: {
+      textAnimation: "slide",
+      transitionIn: "slide",
+      transitionOut: "slide",
+      layout: "full",
+      textPosition: "top",
+      textStyle: "outlined",
+      overlayEffects: ["step-numbers", "progress-bar"],
+    },
+  },
+  {
+    id: "meme-reaction",
+    name: "Meme Reaction",
+    description:
+      "Bold, oversized text with zoom-in effect synced to a reaction moment. Uses impact-style font with outline. Perfect for comedic highlights and viral moments.",
+    category: "kinetic",
+    preview: "/templates/meme.svg",
+    config: {
+      textAnimation: "pop",
+      transitionIn: "zoom",
+      transitionOut: "cut",
+      layout: "full",
+      textPosition: "center",
+      textStyle: "outlined",
+      overlayEffects: ["zoom-shake", "impact-text"],
+    },
+  },
+  {
+    id: "before-after",
+    name: "Before / After",
+    description:
+      "Split-screen comparison with a sliding reveal. Left side shows 'before', right side shows 'after'. Great for transformations, tutorials, and dramatic reveals.",
+    category: "split",
+    preview: "/templates/before-after.svg",
+    config: {
+      textAnimation: "slide",
+      transitionIn: "slide",
+      transitionOut: "slide",
+      layout: "split-vertical",
+      textPosition: "bottom",
+      textStyle: "bold",
+      overlayEffects: ["split-labels", "slider-reveal"],
+    },
+  },
 ];
-
-export function getTemplatesByCategory(category: EditTemplate["category"]): EditTemplate[] {
-  return TEMPLATES.filter((t) => t.category === category);
-}
-
-export function getTemplateById(id: string): EditTemplate | undefined {
-  return TEMPLATES.find((t) => t.id === id);
-}

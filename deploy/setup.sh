@@ -3,7 +3,7 @@ set -euo pipefail
 
 DOMAIN="spikeclips.com"
 SWAP_SIZE="2G"
-REPO_URL="git@github.com:ahMEDhat-7/spikeclips.git"
+REPO_URL="git@github.com:ahmedhat/SpikeClip.git"
 
 echo "=== SpikeClip VPS Setup ==="
 echo "Target: Ryzen 7 7700X 2c/4t / 6GB DDR5 / 120GB NVMe / 1Gbps"

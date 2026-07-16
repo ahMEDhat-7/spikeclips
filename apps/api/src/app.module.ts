@@ -10,8 +10,11 @@ import { StorageModule } from "./infrastructure/storage/storage.module";
 import { AuthModule } from "./infrastructure/auth/auth.module";
 import { MusicModule } from "./presentation/music/music.module";
 import { ExternalModule } from "./infrastructure/external/external.module";
+import { SentryModule } from "./infrastructure/sentry/sentry.module";
+import { PaymentsModule } from "./presentation/payments/payments.module";
 import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
 import { RolesGuard } from "./infrastructure/auth/roles.guard";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 @Module({
   imports: [
@@ -24,6 +27,12 @@ import { RolesGuard } from "./infrastructure/auth/roles.guard";
     StorageModule,
     MusicModule,
     ExternalModule,
+    PaymentsModule,
+    SentryModule.forRoot({
+      dsn: process.env.SENTRY_DSN || "",
+      environment: process.env.NODE_ENV || "development",
+      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
+    }),
     ThrottlerModule.forRoot([
       {
         name: "global",
@@ -38,6 +47,10 @@ import { RolesGuard } from "./infrastructure/auth/roles.guard";
     ]),
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

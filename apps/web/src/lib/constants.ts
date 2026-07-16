@@ -1,0 +1,7 @@
+export const FPS = 30;
+export const POLLING_INTERVAL_MS = 2000;
+export const VIDEO_UPDATE_INTERVAL_MS = 250;
+export const ANALYSIS_POLL_INTERVAL_MS = 3000;
+export const ANALYSIS_MAX_POLL_ATTEMPTS = 120;
+export const SUCCESS_MESSAGE_TIMEOUT_MS = 3000;
+export const HERO_ANIMATION_DURATION_MS = 12000;

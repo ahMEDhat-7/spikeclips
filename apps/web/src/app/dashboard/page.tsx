@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UrlInput } from "@/presentation/components/jobs/UrlInput";
-import { ProcessingTimeline } from "@/presentation/components/features/ProcessingTimeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,24 +12,11 @@ import { SkeletonDashboard } from "@/components/ui/skeleton-variants";
 import { useAnalyzeVideo } from "@/application/hooks/use-analyze-video";
 import { useAuth } from "@/application/hooks/use-auth";
 import { jobApi } from "@/infrastructure/api/job-api.client";
-import { Job } from "@/domain/entities/job";
+import { Job, JOB_STATUS } from "@/domain/entities/job";
 import { SceneEditor } from "@/presentation/components/scenes/SceneEditor";
-import { History, ArrowLeft, ExternalLink } from "lucide-react";
-
-const analysisSteps = [
-  { label: "Validate URL", description: "Checking YouTube link" },
-  { label: "Extract heatmap", description: "Fetching viewer data" },
-  { label: "Detect scenes", description: "Merging engagement spikes" },
-  { label: "Complete", description: "Results ready" },
-];
-
-function getAnalysisStep(job: Job | null): number {
-  if (!job) return 0;
-  if (job.status === "failed") return 1;
-  if (job.status === "completed") return 3;
-  if (job.scenes && job.scenes.length > 0) return 2;
-  return 1;
-}
+import { VideoScenePreview } from "@/presentation/components/video/VideoScenePreview";
+import { History, ArrowLeft, ExternalLink, Clock } from "lucide-react";
+import { toastError } from "@/lib/toast";
 
 function DashboardContent() {
   const searchParams = useSearchParams();
@@ -40,6 +26,10 @@ function DashboardContent() {
   const [jobHistory, setJobHistory] = useState<Job[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | undefined>(undefined);
+  const [progress, setProgress] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   const loadHistory = useCallback(async () => {
     if (!user) return;
@@ -47,7 +37,7 @@ function DashboardContent() {
       const jobs = await jobApi.getJobs();
       setJobHistory(jobs);
     } catch {
-      // ignore
+      toastError("Failed to load job history.");
     }
   }, [user]);
 
@@ -55,9 +45,33 @@ function DashboardContent() {
     if (user) loadHistory();
   }, [user, loadHistory]);
 
-  const isProcessing = job?.status === "processing";
-  const isCompleted = job?.status === "completed";
-  const currentStep = getAnalysisStep(job);
+  useEffect(() => {
+    if (isLoading) {
+      startTimeRef.current = Date.now();
+      setProgress(0);
+      setElapsedTime(0);
+
+      progressIntervalRef.current = setInterval(() => {
+        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        setElapsedTime(elapsed);
+        const estimated = Math.min(90, (elapsed / 60) * 90);
+        setProgress(estimated);
+      }, 500);
+    } else if (job?.status === JOB_STATUS.COMPLETED) {
+      setProgress(100);
+    } else if (job?.status === JOB_STATUS.FAILED) {
+      setProgress(0);
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [isLoading, job?.status]);
+
+  const isProcessing = job?.status === JOB_STATUS.PROCESSING;
+  const isCompleted = job?.status === JOB_STATUS.COMPLETED;
 
   return (
     <main className="container mx-auto p-4 sm:p-6 space-y-6">
@@ -78,16 +92,15 @@ function DashboardContent() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {jobHistory.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-            >
-              <History className="h-4 w-4 mr-1" />
-              History ({jobHistory.length})
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory(!showHistory)}
+            disabled={jobHistory.length === 0}
+          >
+            <History className="h-4 w-4 mr-1" />
+            History {jobHistory.length > 0 ? `(${jobHistory.length})` : ""}
+          </Button>
         </div>
       </div>
 
@@ -111,9 +124,18 @@ function DashboardContent() {
               <div
                 key={j.id}
                 className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-hover cursor-pointer transition-colors"
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   setShowHistory(false);
                   loadJob(j.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowHistory(false);
+                    loadJob(j.id);
+                  }
                 }}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -134,7 +156,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 <Badge
-                  variant={j.status === "completed" ? "default" : "secondary"}
+                  variant={j.status === JOB_STATUS.COMPLETED ? "default" : "secondary"}
                   className="shrink-0 capitalize"
                 >
                   {j.status}
@@ -155,25 +177,30 @@ function DashboardContent() {
         </Card>
       )}
 
-      {isProcessing && (
+      {isLoading && (
         <Card>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Processing video</h3>
-              <span className="text-xs font-mono text-muted-foreground">
-                Step {currentStep + 1} of {analysisSteps.length}
-              </span>
+              <h3 className="font-semibold">Analyzing video</h3>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span>{Math.floor(elapsedTime)}s elapsed</span>
+              </div>
             </div>
-            <Progress
-              value={currentStep}
-              max={analysisSteps.length - 1}
-              showPercentage
-            />
-            <ProcessingTimeline
-              steps={analysisSteps}
-              currentStep={currentStep}
-              status={job?.status === "failed" ? "error" : "active"}
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold font-mono">{Math.round(progress)}%</span>
+                <span className="text-xs text-muted-foreground">
+                  {progress < 30 ? "Validating URL..." : progress < 60 ? "Extracting heatmap..." : progress < 85 ? "Detecting scenes..." : "Finalizing..."}
+                </span>
+              </div>
+              <Progress
+                value={progress}
+                max={100}
+                size="lg"
+                variant={progress >= 90 ? "success" : "default"}
+              />
+            </div>
           </CardContent>
         </Card>
       )}
@@ -197,7 +224,7 @@ function DashboardContent() {
                   <div className="flex items-center gap-2">
                     <Badge
                       variant={
-                        job.status === "completed" ? "default" : "secondary"
+                        job.status === JOB_STATUS.COMPLETED ? "default" : "secondary"
                       }
                       className="capitalize"
                     >
@@ -218,20 +245,33 @@ function DashboardContent() {
           </Card>
 
           {isCompleted && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Detected Scenes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SceneEditor
-                  heatmap={job.heatmapData ?? []}
-                  suggestedScenes={job.scenes ?? []}
-                  scenesLimit={user?.scenesLimit ?? 3}
-                  onExport={() => {}}
-                  onSceneSelect={setSelectedSceneIndex}
-                />
-              </CardContent>
-            </Card>
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="lg:w-2/5 lg:sticky lg:top-4 lg:self-start">
+                <Card className="overflow-hidden">
+                  <VideoScenePreview
+                    job={job}
+                    selectedSceneIndex={selectedSceneIndex}
+                    onSceneSelect={setSelectedSceneIndex}
+                  />
+                </Card>
+              </div>
+
+              <div className="lg:w-3/5">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Detected Scenes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SceneEditor
+                      heatmap={job.heatmapData ?? []}
+                      suggestedScenes={job.scenes ?? []}
+                      scenesLimit={user?.scenesLimit ?? 3}
+                      onSceneSelect={setSelectedSceneIndex}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           )}
 
           {isCompleted && (
@@ -256,12 +296,17 @@ function DashboardContent() {
               className="h-8 w-8 opacity-40"
             />
           </div>
-          <p className="text-muted-foreground">
-            Enter a YouTube URL above to get started
-          </p>
-          <p className="text-xs text-muted-foreground/60">
-            Free tier includes 3 analyses per month
-          </p>
+          <div className="space-y-1">
+            <p className="text-lg font-medium">Analyze a YouTube Video</p>
+            <p className="text-sm text-muted-foreground">
+              Paste a YouTube URL above to extract heatmap data and find the most-replayed moments.
+            </p>
+          </div>
+          {user?.plan === "free" && (
+            <p className="text-xs text-muted-foreground/60">
+              Free plan: {user.analysesUsed}/{user.analysesLimit} analyses used this month
+            </p>
+          )}
         </div>
       )}
     </main>

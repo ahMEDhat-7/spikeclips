@@ -70,7 +70,11 @@ export function createHeatmapWorker(prisma: PrismaService): Worker {
 
         logger.log(`Completed heatmap for job ${jobId}: ${scenes.length} scenes`);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const raw = error instanceof Error ? error.message : "Unknown error";
+        const message = raw
+          .replace(/\/[^\s:]+/g, "[path]")
+          .replace(/(?:password|secret|token|key)[=:]\S+/gi, "[redacted]")
+          .slice(0, 200);
         logger.error(`Heatmap job ${jobId} failed: ${message}`);
 
         await prisma.job.update({

@@ -1,8 +1,11 @@
 #!/bin/sh
 set -e
 
+echo "Generating Prisma client..."
+pnpm exec prisma generate --schema=./prisma/schema.prisma
+
 echo "Running Prisma migrations..."
-npx prisma migrate deploy --schema=./prisma/schema.prisma 2>/dev/null || echo "Skipping migrations (Prisma not found)"
+pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma || echo "Migrations failed or already applied"
 
 echo "Starting API server..."
 exec node dist/main

@@ -5,9 +5,13 @@ import {
   Patch,
   Body,
   Res,
+  Req,
   HttpCode,
   HttpStatus,
   Request,
+  UseGuards,
+  Logger,
+  NotFoundException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -15,13 +19,11 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { Response, Request as ExpressRequest } from "express";
+import { AuthGuard } from "@nestjs/passport";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
-import { RegisterDto } from "./dto/register.dto";
-import { LoginDto } from "./dto/login.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { ChangePasswordDto } from "./dto/change-password.dto";
-import { AuthResponseDto } from "./dto/auth-response.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
 import { Public } from "./jwt-auth.guard";
 
@@ -51,49 +53,11 @@ function clearAuthCookie(res: Response): void {
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Post("register")
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Register a new account", description: "Creates a new user account and returns user data. JWT is set as httpOnly cookie." })
-  @ApiResponse({ status: 201, description: "Account created successfully", type: AuthResponseDto })
-  @ApiResponse({ status: 409, description: "Email already registered" })
-  @ApiResponse({ status: 400, description: "Invalid input" })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response): Promise<AuthResponseDto> {
-    const result = await this.authService.register(dto.email, dto.password, dto.name);
-    setAuthCookie(res, result.accessToken);
-    return {
-      userId: result.userId,
-      email: result.email,
-      name: result.name,
-      plan: result.plan,
-      analysesUsed: result.analysesUsed,
-      analysesLimit: result.analysesLimit,
-      scenesLimit: result.scenesLimit,
-    };
-  }
-
-  @Public()
-  @Post("login")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Login", description: "Authenticates user and returns user data. JWT is set as httpOnly cookie." })
-  @ApiResponse({ status: 200, description: "Login successful", type: AuthResponseDto })
-  @ApiResponse({ status: 401, description: "Invalid credentials" })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response): Promise<AuthResponseDto> {
-    const result = await this.authService.login(dto.email, dto.password);
-    setAuthCookie(res, result.accessToken);
-    return {
-      userId: result.userId,
-      email: result.email,
-      name: result.name,
-      plan: result.plan,
-      analysesUsed: result.analysesUsed,
-      analysesLimit: result.analysesLimit,
-      scenesLimit: result.scenesLimit,
-    };
-  }
-
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Logout", description: "Clears the authentication cookie." })
@@ -108,15 +72,18 @@ export class AuthController {
   @ApiOperation({ summary: "Get current user", description: "Returns the authenticated user's profile." })
   @ApiResponse({ status: 200, description: "User profile", type: UserResponseDto })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getProfile(@Request() req: { user: { userId: string } }): Promise<UserResponseDto | null> {
-    return this.authService.getProfile(req.user.userId);
+  async getProfile(@Request() req: { user: { userId: string } }): Promise<UserResponseDto> {
+    const profile = await this.authService.getProfile(req.user.userId);
+    if (!profile) {
+      throw new NotFoundException("User not found");
+    }
+    return profile;
   }
 
   @Patch("me")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Update profile", description: "Update the authenticated user's name or email." })
+  @ApiOperation({ summary: "Update profile", description: "Update the authenticated user's name." })
   @ApiResponse({ status: 200, description: "Updated user profile", type: UserResponseDto })
-  @ApiResponse({ status: 409, description: "Email already in use" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async updateProfile(
     @Request() req: { user: { userId: string } },
@@ -125,17 +92,30 @@ export class AuthController {
     return this.authService.updateProfile(req.user.userId, dto);
   }
 
-  @Post("change-password")
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Change password", description: "Change the authenticated user's password." })
-  @ApiResponse({ status: 200, description: "Password changed successfully" })
-  @ApiResponse({ status: 401, description: "Current password is incorrect" })
-  async changePassword(
-    @Request() req: { user: { userId: string } },
-    @Body() dto: ChangePasswordDto
-  ): Promise<{ message: string }> {
-    await this.authService.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
-    return { message: "Password changed successfully" };
+  @Get("google")
+  @Public()
+  @Throttle({ auth: { limit: 10, ttl: 60_000 } })
+  @UseGuards(AuthGuard("google"))
+  async googleAuth() {}
+
+  @Get("google/callback")
+  @Public()
+  @Throttle({ auth: { limit: 10, ttl: 60_000 } })
+  @UseGuards(AuthGuard("google"))
+  async googleCallback(@Req() req: ExpressRequest & { user?: { accessToken?: string } }, @Res() res: Response) {
+    try {
+      const result = req.user;
+      if (!result?.accessToken) {
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        return res.redirect(`${frontendUrl}/login?error=auth_failed`);
+      }
+      setAuthCookie(res, result.accessToken);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      res.redirect(`${frontendUrl}/dashboard`);
+    } catch (err) {
+      this.logger.error(`Google callback error: ${err}`);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      res.redirect(`${frontendUrl}/login?error=auth_failed`);
+    }
   }
 }

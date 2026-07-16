@@ -8,9 +8,10 @@ interface StudioLayoutProps {
   right?: ReactNode;
   bottom?: ReactNode;
   toolbar: ReactNode;
+  leftExpanded?: boolean;
 }
 
-export function StudioLayout({ left, center, right, bottom, toolbar }: StudioLayoutProps) {
+export function StudioLayout({ left, center, right, bottom, toolbar, leftExpanded }: StudioLayoutProps) {
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground">
       {toolbar}
@@ -19,21 +20,23 @@ export function StudioLayout({ left, center, right, bottom, toolbar }: StudioLay
         <aside
           role="navigation"
           aria-label="Studio tools"
-          className="w-14 shrink-0 border-r bg-background overflow-y-auto"
+          className={`shrink-0 border-r bg-background overflow-hidden transition-all duration-200 ${
+            leftExpanded ? "w-48" : "w-14"
+          }`}
         >
           {left}
         </aside>
 
         <main role="main" className="flex-1 flex overflow-hidden min-w-0">
-          <div className="flex-1 flex flex-col overflow-y-auto min-w-0 h-full">
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0 h-full">
             {center}
           </div>
 
           {right && (
             <aside
               role="complementary"
-              aria-label="Properties"
-              className="w-72 shrink-0 border-l bg-background overflow-y-auto p-3 hidden lg:block"
+              aria-label="Preview"
+              className="w-[420px] shrink-0 border-l bg-background overflow-y-auto hidden md:block"
             >
               {right}
             </aside>

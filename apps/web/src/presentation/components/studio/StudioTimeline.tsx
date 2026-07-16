@@ -1,18 +1,13 @@
 "use client";
 
 import { ScoredBlock } from "@/domain/entities/job";
+import { formatTime } from "@/lib/format";
 
 interface StudioTimelineProps {
   scenes: ScoredBlock[];
   selectedScenes: number[];
   totalDuration: number;
   onToggleScene: (index: number) => void;
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export function StudioTimeline({

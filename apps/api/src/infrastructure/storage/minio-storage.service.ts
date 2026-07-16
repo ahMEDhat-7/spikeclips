@@ -10,12 +10,16 @@ export class MinioStorageService implements StorageService, OnModuleInit {
   private bucket: string;
 
   constructor() {
-    const endpoint = process.env.MINIO_ENDPOINT || "localhost";
+    const endpoint = process.env.MINIO_ENDPOINT;
     const port = parseInt(process.env.MINIO_PORT || "9000");
     const useSSL = process.env.MINIO_USE_SSL === "true";
-    const accessKey = process.env.MINIO_ACCESS_KEY || "minioadmin";
-    const secretKey = process.env.MINIO_SECRET_KEY || "minioadmin";
+    const accessKey = process.env.MINIO_ACCESS_KEY;
+    const secretKey = process.env.MINIO_SECRET_KEY;
     this.bucket = process.env.MINIO_BUCKET || "spikeclips-clips";
+
+    if (!endpoint || !accessKey || !secretKey) {
+      throw new Error("MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY are required");
+    }
 
     this.client = new Minio.Client({
       endPoint: endpoint,
@@ -60,5 +64,16 @@ export class MinioStorageService implements StorageService, OnModuleInit {
   async delete(key: string): Promise<void> {
     await this.client.removeObject(this.bucket, key);
     this.logger.log(`Deleted from MinIO: ${key}`);
+  }
+
+  async healthCheck(): Promise<{ status: string; message?: string }> {
+    try {
+      const exists = await this.client.bucketExists(this.bucket);
+      return exists
+        ? { status: "ok" }
+        : { status: "error", message: `Bucket "${this.bucket}" does not exist` };
+    } catch (err) {
+      return { status: "error", message: err instanceof Error ? err.message : "MinIO unreachable" };
+    }
   }
 }

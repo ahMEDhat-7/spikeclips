@@ -1,5 +1,4 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Card,
@@ -12,6 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Simple, transparent pricing for SpikeClip. Choose the plan that fits your workflow.",
+};
+
 const tiers = [
   {
     name: "Free",
@@ -20,12 +25,13 @@ const tiers = [
     description: "Try SpikeClip with limited analyses",
     features: [
       "3 heatmap analyses per month",
+      "Up to 3 scenes per video",
       "View engagement data",
-      "No clip downloads",
+      "Scene editor with heatmap",
       "Standard processing speed",
     ],
     cta: "Get Started",
-    href: "/register",
+    href: "/login",
     variant: "outline" as const,
   },
   {
@@ -41,7 +47,7 @@ const tiers = [
       "All export formats",
     ],
     cta: "Start Pro Trial",
-    href: "/register",
+    href: "/login",
     variant: "default" as const,
     popular: true,
   },
@@ -58,7 +64,7 @@ const tiers = [
       "Batch processing",
     ],
     cta: "Contact Sales",
-    href: "/register",
+    href: "mailto:hello@spikeclips.com",
     variant: "outline" as const,
   },
 ];
@@ -111,7 +117,7 @@ export default function PricingPage() {
                       key={feature}
                       className="flex items-start gap-2 text-sm"
                     >
-                      <Check className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                      <Check className="h-4 w-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
                       <span>{feature}</span>
                     </li>
                   ))}

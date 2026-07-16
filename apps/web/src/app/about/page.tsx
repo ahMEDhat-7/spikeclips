@@ -67,10 +67,12 @@ export default function AboutPage() {
 
               <h2 className="text-2xl font-bold">Our approach</h2>
               <p className="text-muted-foreground">
-                SpikeClip extracts this heatmap data and uses a merging algorithm
-                to identify the most-engaged moments. No AI guesses. No
-                sentiment analysis. Just raw viewer behavior translated into
-                actionable clip suggestions.
+                SpikeClip extracts YouTube heatmap data and uses our v2 spike
+                merging algorithm with gap-tolerant clustering (5s tolerance,
+                0.25 intensity delta) to identify the most-engaged moments. No
+                AI guesses. No sentiment analysis. Just raw viewer behavior
+                translated into actionable clip suggestions — built with
+                Next.js, NestJS, Clean Architecture, and Prisma.
               </p>
 
               <h2 className="text-2xl font-bold">The result</h2>
@@ -114,7 +116,7 @@ export default function AboutPage() {
           Join creators using real viewer data to make better content decisions.
         </p>
         <Button asChild size="lg">
-          <Link href="/register">Get started free</Link>
+          <Link href="/login">Get started free</Link>
         </Button>
       </section>
     </main>
