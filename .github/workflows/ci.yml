@@ -66,7 +66,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Start infra (postgres, redis) via docker compose
-        run: docker compose -f docker-compose.yml up -d --wait postgres redis
+        run: docker compose -f docker-compose.yml up -d postgres redis
+      - name: Wait for postgres to accept connections
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
+              echo "postgres ready after ${i} tries"; break
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips
+      - name: Dump postgres logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs postgres
       - run: pnpm --filter @spikeclips/api exec prisma generate
       - run: pnpm --filter @spikeclips/api exec prisma migrate deploy
       - run: pnpm --filter @spikeclips/api test:e2e
