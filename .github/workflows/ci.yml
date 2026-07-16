@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -26,6 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -39,6 +43,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -48,15 +54,53 @@ jobs:
       - run: pnpm --filter @spikeclips/api test
       - run: pnpm --filter @spikeclips/web test
 
+  e2e:
+    name: API E2E (compose infra)
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@localhost:5433/spikeclips
+      REDIS_HOST: localhost
+      REDIS_PORT: "6380"
+      REDIS_PASSWORD: spikeclips_dev_redis
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start infra (postgres, redis) via docker compose
+        run: docker compose -f docker-compose.yml up -d --wait postgres redis
+      - run: pnpm --filter @spikeclips/api exec prisma generate
+      - run: pnpm --filter @spikeclips/api exec prisma migrate deploy
+      - run: pnpm --filter @spikeclips/api test:e2e
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml down -v
+
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build api and web images
+        run: docker compose -f docker-compose.yml build api web

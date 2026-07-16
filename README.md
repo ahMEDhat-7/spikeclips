@@ -179,8 +179,11 @@ pnpm --filter @spikeclips/web test           # Frontend (14 tests)
 
 GitHub Actions runs on push to `main`/`develop` and PRs to `main`:
 1. **Lint** — TypeScript type checking
-2. **Test** — All packages
-3. **Build** — Full build verification
+2. **Security Audit** — `pnpm audit`
+3. **Test** — Unit tests for all packages
+4. **API E2E** — Postgres + Redis brought up via `docker compose`, with `prisma migrate deploy`
+5. **Build** — Full build verification
+6. **Docker Build** — Verifies `api` + `web` Docker images build (VPS deploy path)
 
 ---
 
