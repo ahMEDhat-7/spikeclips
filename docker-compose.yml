@@ -4,6 +4,7 @@ services:
     image: postgres:18-alpine
     container_name: spikeclips-postgres
     restart: unless-stopped
+    shm_size: 256mb
     ports:
       - "127.0.0.1:5433:5432"
     environment:

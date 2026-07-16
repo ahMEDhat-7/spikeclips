@@ -69,11 +69,11 @@ jobs:
         run: docker compose -f docker-compose.yml up -d postgres redis
       - name: Wait for postgres to accept connections
         run: |
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
               echo "postgres ready after ${i} tries"; break
             fi
-            sleep 2
+            sleep 3
           done
           docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips
       - name: Dump postgres logs on failure

@@ -50,11 +50,13 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+# Prisma schema must be present before install (postinstall runs `prisma generate`)
+COPY apps/api/prisma ./apps/api/prisma
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY apps/api/entrypoint.sh ./apps/api/entrypoint.sh
 RUN chmod +x ./apps/api/entrypoint.sh
