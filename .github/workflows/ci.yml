@@ -57,6 +57,32 @@ jobs:
       REDIS_PORT: "6380"
       REDIS_PASSWORD: spikeclips_dev_redis
       NODE_ENV: test
+      # App bootstrap secrets for e2e (dummy values; no real services hit)
+      JWT_SECRET: test_jwt_secret_for_ci
+      GOOGLE_CLIENT_ID: test_google_client_id
+      GOOGLE_CLIENT_SECRET: test_google_client_secret
+      STRIPE_SECRET_KEY: sk_test_ci
+      STRIPE_WEBHOOK_SECRET: whsec_test_ci
+      STRIPE_PRO_MONTHLY_PRICE_ID: price_test_pro_m
+      STRIPE_PRO_YEARLY_PRICE_ID: price_test_pro_y
+      STRIPE_TEAM_MONTHLY_PRICE_ID: price_test_team_m
+      STRIPE_TEAM_YEARLY_PRICE_ID: price_test_team_y
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: spikeclips
+      MINIO_USE_SSL: "false"
+      STORAGE_DRIVER: minio
+      FRONTEND_URL: http://localhost:3000
+      BACKEND_URL: http://localhost:3001
+      CLIPS_BASE_URL: http://localhost:9000/spikeclips
+      CLIP_SIGNING_SECRET: test_clip_signing_secret
+      ALLOWED_ORIGINS: http://localhost:3000
+      CLIP_WORKER_CONCURRENCY: "2"
+      HEATMAP_WORKER_CONCURRENCY: "2"
+      CLIPS_DIR: /tmp/clips
+      SENTRY_DSN: ""
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
