@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: spikeclips-postgres
     restart: unless-stopped
     security_opt:
@@ -32,7 +32,7 @@ services:
           memory: 1G
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: spikeclips-redis
     restart: unless-stopped
     security_opt:
@@ -61,7 +61,7 @@ services:
           memory: 256M
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:latest-release
     container_name: spikeclips-minio
     restart: unless-stopped
     security_opt:
