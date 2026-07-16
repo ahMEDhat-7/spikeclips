@@ -20,6 +20,8 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+# Prisma schema must be present before install (postinstall runs `prisma generate`)
+COPY apps/api/prisma ./apps/api/prisma
 RUN pnpm install --frozen-lockfile
 
 # Build shared package

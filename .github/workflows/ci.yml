@@ -69,15 +69,15 @@ jobs:
         run: docker compose -f docker-compose.yml up -d postgres redis
       - name: Wait for postgres to accept connections
         run: |
-          for i in $(seq 1 60); do
+          for i in $(seq 1 20); do
             if docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
               echo "postgres ready after ${i} tries"; break
             fi
             sleep 3
           done
           docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips
-      - name: Dump postgres logs on failure
-        if: failure()
+      - name: Dump postgres logs
+        if: always()
         run: docker compose -f docker-compose.yml logs postgres
       - run: pnpm --filter @spikeclips/api exec prisma generate
       - run: pnpm --filter @spikeclips/api exec prisma migrate deploy
