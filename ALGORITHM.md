@@ -4,9 +4,9 @@ The spike detection algorithm identifies the most-replayed moments in YouTube vi
 
 ## Overview
 
-Located at `packages/shared/src/algorithm/merge.ts` (57 tests).
+Located at `packages/shared/src/algorithm/merge.ts` (62 tests).
 
-Python reference: `CreateYTShorts.py` (v2).
+TypeScript port of `CreateYTShorts.py` (v2). Canonical defaults defined in `packages/shared/src/types.ts` (`DEFAULT_ALGORITHM_CONFIG`).
 
 ## Pipeline
 
@@ -65,14 +65,14 @@ Pads each scene by ±5 seconds (configurable), clamps to `[0, videoDuration]`, m
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `gap_tolerance` | 8.0s | Max gap between spikes to merge |
+| `gap_tolerance` | 5.0s | Max gap between spikes to merge |
 | `intensity_tolerance` | 0.25 | Max intensity delta to merge |
 | `min_intensity_cutoff` | 0.40 | Floor override threshold |
-| `min_clip_duration` | 50.0s | Minimum clip length |
-| `max_clip_duration` | 80.0s | Maximum clip length |
-| `target_duration_range` | [50.0, 80.0] | Ideal clip duration |
+| `min_clip_duration` | 3.0s | Minimum clip length |
+| `max_clip_duration` | 60.0s | Maximum clip length |
+| `target_duration_range` | [15.0, 60.0] | Ideal clip duration |
 | `top_n` | 3 | Number of scenes to select |
-| `min_spacing` | 10.0s | Minimum gap between selected scenes |
+| `min_spacing` | 5.0s | Minimum gap between selected scenes |
 | `weight_peak` | 0.4 | Peak intensity score weight |
 | `weight_avg` | 0.4 | Average intensity score weight |
 | `weight_duration_fit` | 0.2 | Duration fitness score weight |
@@ -92,7 +92,7 @@ Pads each scene by ±5 seconds (configurable), clamps to `[0, videoDuration]`, m
 pnpm --filter @spikeclips/shared test
 ```
 
-57 test cases covering:
+62 test cases covering:
 - Merge logic (gap, intensity, floor override)
 - Scoring (weights, duration fit)
 - Selection (non-overlap, spacing, top-N)

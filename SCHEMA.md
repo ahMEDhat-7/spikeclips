@@ -1,14 +1,15 @@
 # Database Schema
 
-PostgreSQL 16 with Prisma ORM.
+PostgreSQL 18 with Prisma ORM.
 
 ## User
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Primary key (auto-generated) |
-| `email` | String | Unique identifier |
-| `passwordHash` | String | bcrypt hashed password |
+| `email` | String | Google OAuth email |
+| `oauthProvider` | String | OAuth provider (`google`) |
+| `oauthProviderId` | String | Google OAuth subject ID |
 | `name` | String? | Display name |
 | `plan` | String | `free` / `pro` / `team` (default: `free`) |
 | `stripeCustomerId` | String? | Stripe customer ID |

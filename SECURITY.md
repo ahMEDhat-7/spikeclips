@@ -12,10 +12,10 @@ If you discover a security vulnerability, please report it responsibly:
 ## Security Measures
 
 ### Authentication
+- Google OAuth 2.0 only (no email/password)
 - JWT tokens stored as httpOnly cookies (not accessible via JavaScript)
-- bcrypt password hashing (12 rounds)
 - 15-minute token expiration
-- Rate limiting on auth endpoints (5 req/min)
+- Rate limiting on auth endpoints (10 req/min)
 
 ### Cookie Security
 - `httpOnly: true` — Prevents JavaScript access
@@ -40,7 +40,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 ### Data Protection
 - Environment variables for secrets (never committed)
-- Signed URLs for clip downloads (MinIO/local)
+- Signed URLs for clip downloads (API streams from MinIO/local storage)
 - HTTPS via Let's Encrypt / Certbot
 - Security headers (CSP, HSTS, X-Frame-Options)
 
