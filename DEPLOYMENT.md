@@ -47,10 +47,32 @@ pnpm dev:web          # Start Web only
 | Frontend | 3000 | Via nginx (port 80) | Next.js app |
 | API | 3001 | Internal only (via Next.js proxy) | NestJS API |
 | Swagger | 3001/api/docs | Local dev only | API documentation |
-| PostgreSQL | 5432 | localhost (Docker network) | Database |
-| Redis | 6379 | localhost (Docker network) | Job queues |
-| MinIO | 9000/9001 | localhost (Docker network) | Object storage |
+| PostgreSQL | 5432 | localhost | Database |
+| Redis | 6379 | localhost | Job queues |
+| MinIO | 9000/9001 | localhost | Object storage |
 | nginx | 80 | Public | Reverse proxy → web only |
+
+### Stripe Webhooks (local dev)
+
+Install the [Stripe CLI](https://docs.stripe.com/stripe-cli) and run:
+
+```bash
+stripe login
+stripe listen --forward-to localhost:3001/api/payments/webhook
+```
+
+The CLI prints a webhook signing secret (`whsec_...`). Copy it into your `.env`:
+
+```
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+Trigger test events:
+
+```bash
+stripe trigger payment_intent.succeeded
+stripe trigger customer.subscription.created
+```
 
 ### Storage
 
