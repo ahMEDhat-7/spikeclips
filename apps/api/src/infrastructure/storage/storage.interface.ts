@@ -1,9 +1,12 @@
+import { Readable } from "stream";
+
 export const STORAGE_SERVICE = "STORAGE_SERVICE";
 
 export interface StorageService {
   upload(file: Buffer, key: string, contentType: string): Promise<string>;
   uploadFromFile(filePath: string, key: string, contentType: string): Promise<string>;
   getSignedUrl(key: string, expiresInSec?: number): Promise<string>;
+  createReadStream(key: string): Promise<Readable>;
   delete(key: string): Promise<void>;
   healthCheck?(): Promise<{ status: string; message?: string }>;
 }

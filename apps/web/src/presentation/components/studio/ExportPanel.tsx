@@ -258,7 +258,7 @@ export function ExportPanel({
                 </div>
                 {clip.status === CLIP_STATUS.COMPLETED && clip.fileUrl && (
                   <a
-                    href={clip.fileUrl}
+                    href={`/api/clips/${clip.id}/download`}
                     download
                     rel="noopener noreferrer"
                     className="shrink-0"

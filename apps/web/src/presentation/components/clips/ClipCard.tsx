@@ -73,7 +73,7 @@ export function ClipCard({ clip }: ClipCardProps) {
             )}
             {clip.status === CLIP_STATUS.COMPLETED && clip.fileUrl && (
               <Button asChild size="sm" variant="outline">
-                <a href={clip.fileUrl} download rel="noopener noreferrer">
+                <a href={`/api/clips/${clip.id}/download`} download rel="noopener noreferrer">
                   <Download className="h-4 w-4 mr-1" />
                   Download
                 </a>

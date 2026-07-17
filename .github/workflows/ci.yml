@@ -71,7 +71,7 @@ jobs:
       MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: spikeclips
+      MINIO_BUCKET: spikeclips-clips
       MINIO_USE_SSL: "false"
       STORAGE_DRIVER: minio
       FRONTEND_URL: http://localhost:3000

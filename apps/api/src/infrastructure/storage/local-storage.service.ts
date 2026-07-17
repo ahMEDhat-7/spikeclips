@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleInit, ForbiddenException } from "@nestjs/common";
 import { writeFile, readFile, mkdir, stat, unlink, access } from "fs/promises";
 import { join, resolve } from "path";
+import { createReadStream } from "fs";
+import { Readable } from "stream";
 import { StorageService } from "./storage.interface";
 import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 
@@ -69,6 +71,15 @@ export class LocalStorageService implements StorageService, OnModuleInit {
     }
     await unlink(resolved);
     this.logger.log(`Deleted file: ${resolved}`);
+  }
+
+  async createReadStream(key: string): Promise<Readable> {
+    const filePath = join(CLIPS_DIR, key);
+    const resolved = resolve(filePath);
+    if (!resolved.startsWith(resolve(CLIPS_DIR))) {
+      throw new ForbiddenException("Invalid storage key");
+    }
+    return createReadStream(resolved);
   }
 
   static verifySignature(key: string, expires: number, sig: string): boolean {

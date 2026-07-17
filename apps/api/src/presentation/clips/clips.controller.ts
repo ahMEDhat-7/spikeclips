@@ -20,17 +20,12 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { Response } from "express";
-import { join, resolve } from "path";
-import { createReadStream } from "fs";
-import { stat } from "fs/promises";
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
 import { Roles } from "../../infrastructure/auth/roles.decorator";
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
-
-const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
 
 @ApiTags("Clips")
 @Controller("clips")
@@ -121,7 +116,7 @@ export class ClipsController {
   @Public()
   @ApiOperation({
     summary: "Serve a clip file via signed URL",
-    description: "Downloads a clip file from local storage after verifying the signed URL.",
+    description: "Downloads a clip file from storage after verifying the signed URL.",
   })
   @ApiParam({ name: "key", description: "Storage key" })
   @ApiResponse({ status: 200, description: "Serves the file" })
@@ -142,29 +137,25 @@ export class ClipsController {
       throw new ForbiddenException("Invalid or expired signature");
     }
 
-    const filePath = join(CLIPS_DIR, key);
-    const resolved = resolve(filePath);
-    if (!resolved.startsWith(resolve(CLIPS_DIR))) {
-      throw new ForbiddenException("Invalid file path");
-    }
-
     try {
-      const fileStat = await stat(resolved);
-      const ext = resolved.split(".").pop()?.toLowerCase() || "mp4";
+      const stream = await this.storage.createReadStream(key);
+      const ext = key.split(".").pop()?.toLowerCase() || "mp4";
       const contentType = ext === "webm" ? "video/webm" : "video/mp4";
+      const filename = key.split("/").pop()?.replace(/[^a-zA-Z0-9._-]/g, "_") || `clip.${ext}`;
+
       res.set({
         "Content-Type": contentType,
-        "Content-Length": fileStat.size.toString(),
-        "Content-Disposition": `attachment; filename="${key.split("/").pop()?.replace(/[^a-zA-Z0-9._-]/g, "_") || `clip.${ext}`}"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       });
-      createReadStream(resolved)
-        .on("error", (err) => {
-          this.logger.error(`Stream error reading ${key}: ${err.message}`);
-          if (!res.headersSent) {
-            res.status(500).json({ error: "Failed to read clip file" });
-          }
-        })
-        .pipe(res);
+
+      stream.on("error", (err) => {
+        this.logger.error(`Stream error reading ${key}: ${err.message}`);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Failed to read clip file" });
+        }
+      });
+
+      stream.pipe(res);
     } catch {
       throw new NotFoundException("File not found");
     }

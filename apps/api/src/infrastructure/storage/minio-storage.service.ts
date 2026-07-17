@@ -1,13 +1,16 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import * as Minio from "minio";
+import { Readable } from "stream";
 import { StorageService } from "./storage.interface";
 import { stat } from "fs/promises";
+import { createHmac } from "crypto";
 
 @Injectable()
 export class MinioStorageService implements StorageService, OnModuleInit {
   private readonly logger = new Logger(MinioStorageService.name);
-  private client: Minio.Client;
-  private bucket: string;
+  private client!: Minio.Client;
+  private bucket!: string;
+  private signingSecret!: string;
 
   constructor() {
     const endpoint = process.env.MINIO_ENDPOINT;
@@ -31,6 +34,11 @@ export class MinioStorageService implements StorageService, OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
+    this.signingSecret = process.env.CLIP_SIGNING_SECRET || "";
+    if (!this.signingSecret) {
+      throw new Error("CLIP_SIGNING_SECRET environment variable is required");
+    }
+
     const exists = await this.client.bucketExists(this.bucket);
     if (!exists) {
       await this.client.makeBucket(this.bucket, "us-east-1");
@@ -58,12 +66,23 @@ export class MinioStorageService implements StorageService, OnModuleInit {
   }
 
   async getSignedUrl(key: string, expiresInSec: number = 3600): Promise<string> {
-    return this.client.presignedGetObject(this.bucket, key, expiresInSec);
+    const expires = Math.floor(Date.now() / 1000) + expiresInSec;
+    const signature = createHmac("sha256", this.signingSecret)
+      .update(`${key}:${expires}`)
+      .digest("hex")
+      .slice(0, 32);
+
+    const baseUrl = process.env.CLIPS_BASE_URL || `http://localhost:${process.env.PORT || 3001}/api`;
+    return `${baseUrl}/clips/download/${encodeURIComponent(key)}?expires=${expires}&sig=${signature}`;
   }
 
   async delete(key: string): Promise<void> {
     await this.client.removeObject(this.bucket, key);
     this.logger.log(`Deleted from MinIO: ${key}`);
+  }
+
+  async createReadStream(key: string): Promise<Readable> {
+    return this.client.getObject(this.bucket, key);
   }
 
   async healthCheck(): Promise<{ status: string; message?: string }> {

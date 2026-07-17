@@ -3,8 +3,6 @@ services:
     image: postgres:18-alpine
     container_name: spikeclips-postgres
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_USER: spikeclips
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spikeclips_dev}
@@ -24,8 +22,6 @@ services:
     image: redis:8-alpine
     container_name: spikeclips-redis
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:6380:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD:-spikeclips_dev_redis}
     volumes:
       - redis_data:/data
@@ -50,8 +46,9 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-spikeclips_dev_redis}
       PORT: 3001
       NODE_ENV: production
-      FRONTEND_URL: http://localhost:3000
-      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:80
+      FRONTEND_URL: http://localhost
+      BACKEND_URL: http://localhost
+      ALLOWED_ORIGINS: http://localhost
       JWT_SECRET: ${JWT_SECRET:-spikeclips-dev-jwt-secret-change-in-production}
       CLIPS_DIR: /tmp/spikeclips-clips
       CLIPS_BASE_URL: http://localhost:80/api
@@ -101,7 +98,7 @@ services:
     container_name: spikeclips-web
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://api:3001
     depends_on:
       api:
         condition: service_started
@@ -124,9 +121,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_data:/data
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
     networks:
       - backend
 
