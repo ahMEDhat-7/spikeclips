@@ -69,7 +69,7 @@ export default function FeaturesPage() {
                       key={detail}
                       className="flex items-center gap-2 text-xs text-muted-foreground"
                     >
-                      <div className="h-1 w-1 rounded-full bg-secondary" aria-hidden="true" />
+                      <div className="h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
                       {detail}
                     </li>
                   ))}
@@ -85,18 +85,18 @@ export default function FeaturesPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">
             How it works
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             {steps.map((step, index) => (
-              <div key={step.number} className="relative">
+              <div key={step.number} className="relative text-center md:text-left">
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border" aria-hidden="true" />
+                  <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-px bg-border" aria-hidden="true" />
                 )}
                 <div className="space-y-3">
-                  <span className="text-3xl font-mono font-bold text-primary/20">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono text-sm font-bold">
                     {step.number}
-                  </span>
-                  <h3 className="font-semibold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  </div>
+                  <h3 className="font-semibold text-lg">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {step.description}
                   </p>
                 </div>

@@ -15,12 +15,12 @@ const TEST_USER = {
 };
 
 function signJwt(payload: Record<string, string>, secret: string, expiresInSec = 86400): string {
-  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("urlbase64");
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
   const now = Math.floor(Date.now() / 1000);
   const body = Buffer.from(
     JSON.stringify({ ...payload, iat: now, exp: now + expiresInSec })
-  ).toString("urlbase64");
-  const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("urlbase64");
+  ).toString("base64url");
+  const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
   return `${header}.${body}.${signature}`;
 }
 

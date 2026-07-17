@@ -1,0 +1,106 @@
+# Docker Compose overlay for local development
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Or:    docker compose up --build  (if dev.sh handles the merge)
+
+services:
+  # ─── API (dev) ───
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    environment:
+      DATABASE_URL: postgresql://spikeclips:${POSTGRES_PASSWORD:-spikeclips_dev}@postgres:5432/spikeclips
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-spikeclips_dev_redis}
+      PORT: 3001
+      NODE_ENV: development
+      FRONTEND_URL: http://localhost
+      BACKEND_URL: http://api:3001
+      ALLOWED_ORIGINS: http://localhost,http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-spikeclips-dev-jwt-secret-change-in-production}
+      CLIPS_DIR: /tmp/spikeclips-clips
+      CLIPS_BASE_URL: http://localhost/api
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-minio}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: spikeclips-clips
+      MINIO_USE_SSL: "false"
+      CLIP_SIGNING_SECRET: ${CLIP_SIGNING_SECRET:-dev-signing-secret-change-in-production}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRO_MONTHLY_PRICE_ID: ${STRIPE_PRO_MONTHLY_PRICE_ID:-price_pro_monthly}
+      STRIPE_PRO_YEARLY_PRICE_ID: ${STRIPE_PRO_YEARLY_PRICE_ID:-price_pro_yearly}
+      STRIPE_TEAM_MONTHLY_PRICE_ID: ${STRIPE_TEAM_MONTHLY_PRICE_ID:-price_team_monthly}
+      STRIPE_TEAM_YEARLY_PRICE_ID: ${STRIPE_TEAM_YEARLY_PRICE_ID:-price_team_yearly}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: development
+      HEATMAP_WORKER_CONCURRENCY: ${HEATMAP_WORKER_CONCURRENCY:-5}
+      CLIP_WORKER_CONCURRENCY: ${CLIP_WORKER_CONCURRENCY:-3}
+      UV_THREADOUT_SIZE: ${UV_THREADPOOL_SIZE:-4}
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./apps/api/tsconfig.json:/app/apps/api/tsconfig.json:ro
+      - ./apps/api/tsconfig.build.json:/app/apps/api/tsconfig.build.json:ro
+      - ./apps/api/nest-cli.json:/app/apps/api/nest-cli.json:ro
+      - ./packages/shared/src:/app/packages/shared/src
+      - api_node_modules:/app/apps/api/node_modules
+      - shared_dist:/app/packages/shared/dist
+    networks:
+      - backend
+
+  # ─── Web (dev) ───
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+      args:
+        NEXT_PUBLIC_API_URL: http://api:3001
+        NEXT_PUBLIC_SITE_URL: http://localhost
+        NEXT_PUBLIC_DOMAIN: localhost
+    environment:
+      INTERNAL_API_URL: http://api:3001
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json:ro
+      - ./apps/web/next.config.ts:/app/apps/web/next.config.ts:ro
+      - ./apps/web/postcss.config.mjs:/app/apps/web/postcss.config.mjs:ro
+      - ./packages/shared/src:/app/packages/shared/src
+      - web_node_modules:/app/apps/web/node_modules
+      - web_next:/app/apps/web/.next
+      - shared_dist:/app/packages/shared/dist
+    networks:
+      - backend
+
+  # ─── Postgres ───
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # ─── Redis ───
+  redis:
+    ports:
+      - "6379:6379"
+
+  # ─── MinIO ───
+  minio:
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # ─── Nginx ───
+  nginx:
+    ports:
+      - "80:80"
+
+volumes:
+  api_node_modules:
+  web_node_modules:
+  web_next:
+  shared_dist:

@@ -7,8 +7,6 @@ import { useAuth } from "@/application/hooks/use-auth";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,7 +26,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       const timeout = setTimeout(() => {
-        window.location.href = `${API_BASE}/auth/google`;
+        window.location.href = "/api/auth/google";
       }, 500);
 
       const errorHandler = () => setRedirectError(true);
@@ -52,9 +50,9 @@ export default function LoginPage() {
   return (
     <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mx-auto">
-            <img src="/logo.svg" alt="SpikeClip logo" className="h-6 w-6" />
+        <div className="text-center space-y-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mx-auto">
+            <img src="/logo.svg" alt="SpikeClip logo" className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold">Welcome back</h1>
           {redirectError ? (
@@ -75,17 +73,16 @@ export default function LoginPage() {
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Redirecting you to Google to sign in...
-            </p>
+            <>
+              <p className="text-sm text-muted-foreground">
+                Redirecting you to Google to sign in...
+              </p>
+              <div className="flex justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            </>
           )}
         </div>
-
-        {!redirectError && (
-          <div className="flex justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
 
         <p className="text-center text-sm text-muted-foreground">
           <Link href="/" className="text-primary hover:underline font-medium">

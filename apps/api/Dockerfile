@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─── Builder ───
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
@@ -22,6 +22,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 # Prisma schema must be present before install (postinstall runs `prisma generate`)
 COPY apps/api/prisma ./apps/api/prisma
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN pnpm install --frozen-lockfile
 
 # Build shared package
@@ -33,7 +34,7 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @spikeclips/api build
 
 # ─── Runtime ───
-FROM node:20-slim AS runtime
+FROM node:24-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
@@ -54,6 +55,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 # Prisma schema must be present before install (postinstall runs `prisma generate`)
 COPY apps/api/prisma ./apps/api/prisma
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts

@@ -11,10 +11,10 @@ services:
       POSTGRES_USER: spikeclips
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spikeclips_dev}
       POSTGRES_DB: spikeclips
-      # postgres 18+ image stores data under a pgdata subdir of PGDATA
-      PGDATA: /var/lib/postgresql/data/pgdata
+      # postgres 18+ requires explicit PGDATA outside the mount point
+      PGDATA: /var/lib/postgresql/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/pgdata
     networks:
       - backend
     healthcheck:
@@ -116,6 +116,8 @@ services:
         NEXT_PUBLIC_DOMAIN: localhost
     container_name: spikeclips-web
     restart: unless-stopped
+    environment:
+      INTERNAL_API_URL: http://api:3001
     depends_on:
       api:
         condition: service_started
@@ -140,10 +142,17 @@ services:
       - web
     networks:
       - backend
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
 
   # ─── MinIO (optional, only when STORAGE_DRIVER=minio) ───
   minio:

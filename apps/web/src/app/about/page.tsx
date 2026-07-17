@@ -37,6 +37,21 @@ const values = [
   },
 ];
 
+const storySections = [
+  {
+    label: "The problem",
+    text: 'Creators spend hours manually reviewing videos to find the "perfect clip moment." Most guess based on intuition, resulting in inconsistent content quality and missed opportunities. Meanwhile, YouTube quietly collects heatmap data showing exactly which moments viewers rewatch — the strongest signal of viral potential.',
+  },
+  {
+    label: "Our approach",
+    text: "SpikeClip extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering (5s tolerance, 0.25 intensity delta) to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions — built with Next.js, NestJS, Clean Architecture, and Prisma.",
+  },
+  {
+    label: "The result",
+    text: "Creators get data-driven clip suggestions in under 60 seconds. Every recommendation is backed by actual viewer attention. The result: higher engagement, less guesswork, and a content workflow that scales.",
+  },
+];
+
 export default function AboutPage() {
   return (
     <main className="space-y-16">
@@ -53,36 +68,18 @@ export default function AboutPage() {
 
       <section className="bg-surface py-16">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <div className="prose prose-neutral dark:prose-invert max-w-none">
-              <h2 className="text-2xl font-bold">The problem</h2>
-              <p className="text-muted-foreground">
-                Creators spend hours manually reviewing videos to find the
-                &quot;perfect clip moment.&quot; Most guess based on intuition,
-                resulting in inconsistent content quality and missed opportunities.
-                Meanwhile, YouTube quietly collects heatmap data showing exactly
-                which moments viewers rewatch — the strongest signal of viral
-                potential.
-              </p>
-
-              <h2 className="text-2xl font-bold">Our approach</h2>
-              <p className="text-muted-foreground">
-                SpikeClip extracts YouTube heatmap data and uses our v2 spike
-                merging algorithm with gap-tolerant clustering (5s tolerance,
-                0.25 intensity delta) to identify the most-engaged moments. No
-                AI guesses. No sentiment analysis. Just raw viewer behavior
-                translated into actionable clip suggestions — built with
-                Next.js, NestJS, Clean Architecture, and Prisma.
-              </p>
-
-              <h2 className="text-2xl font-bold">The result</h2>
-              <p className="text-muted-foreground">
-                Creators get data-driven clip suggestions in under 60 seconds.
-                Every recommendation is backed by actual viewer attention. The
-                result: higher engagement, less guesswork, and a content workflow
-                that scales.
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto space-y-10">
+            {storySections.map((section) => (
+              <div key={section.label} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 rounded-full bg-primary" />
+                  <h2 className="text-xl sm:text-2xl font-bold">{section.label}</h2>
+                </div>
+                <p className="text-muted-foreground leading-relaxed pl-4">
+                  {section.text}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

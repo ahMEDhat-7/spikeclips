@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
+const cspDirectives = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  "frame-ancestors 'none'",
+];
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -8,15 +20,7 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   {
     key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
-      "font-src 'self'",
-      "connect-src 'self'",
-      "frame-ancestors 'none'",
-    ].join("; "),
+    value: cspDirectives.join("; "),
   },
   {
     key: "Strict-Transport-Security",
