@@ -32,14 +32,14 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: "Checkout session URL returned" })
   @ApiResponse({ status: 401, description: "Authentication required" })
   async createCheckoutSession(
-    @Req() req: Request & { user?: { sub?: string; email?: string } },
+    @Req() req: Request & { user?: { userId?: string; email?: string } },
     @Body() dto: CreateCheckoutSessionDto
   ) {
-    if (!req.user?.sub || !req.user?.email) {
+    if (!req.user?.userId || !req.user?.email) {
       throw new UnauthorizedException("Authentication required");
     }
     return this.paymentsService.createCheckoutSession(
-      req.user.sub,
+      req.user.userId,
       req.user.email,
       dto.plan,
       dto.interval,
@@ -54,13 +54,13 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: "Portal session URL returned" })
   @ApiResponse({ status: 401, description: "Authentication required" })
   async createPortalSession(
-    @Req() req: Request & { user?: { sub?: string } },
+    @Req() req: Request & { user?: { userId?: string } },
     @Body() dto: CreatePortalSessionDto
   ) {
-    if (!req.user?.sub) {
+    if (!req.user?.userId) {
       throw new UnauthorizedException("Authentication required");
     }
-    return this.paymentsService.createPortalSession(req.user.sub, dto.returnUrl);
+    return this.paymentsService.createPortalSession(req.user.userId, dto.returnUrl);
   }
 
   @Post("webhook")

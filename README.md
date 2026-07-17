@@ -24,18 +24,18 @@ SpikeClip extracts the most-replayed moments from YouTube videos using **actual 
                           │  /api/* → proxy to API (intern) │
                           └──────────────┬──────────────────┘
                                          │ Docker network
-                          ┌──────────────▼──────────────────┐
-                          │    NestJS API :3001              │
-                          │    (internal only)               │
+                          ┌──────────────▼───────────────────┐
+                          │      NestJS API :3001            │
+                          │         (internal only)          │
                           └──────────┬───────────────────────┘
                                      │
                      ┌───────────────┼───────────────┐
                      │               │               │
-         ┌───────────▼─────┐ ┌──────▼───────┐ ┌─────▼───────┐
-         │  PostgreSQL 18  │ │   Redis 8    │ │    MinIO    │
-         │ (localhost:5432)│ │ (localhost:  │ │ (localhost:  │
-         └─────────────────┘ │     6379)    │ │  9000/9001) │
-                             └──────────────┘ └─────────────┘
+         ┌───────────▼─────┐ ┌───────▼──────┐ ┌──────▼─────────┐
+         │  PostgreSQL 18  │ │   Redis 8    │ │    MinIO       │
+         │ (localhost:5432)│ │ (localhost:  │ │ (localhost:    │
+         └─────────────────┘ │     6379)    │ │  9000/9001)    │
+                             └──────────────┘ └────────────────┘
 ```
 
 - **nginx** is the only public entry point. It proxies to the web server only.
@@ -135,14 +135,14 @@ CI runs 6 jobs: Lint, Security Audit, Test, API E2E (compose infra), Build, Dock
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [API Reference](API.md) | Endpoints, request/response examples |
-| [Database Schema](SCHEMA.md) | User, Job, Clip tables |
-| [Algorithm](ALGORITHM.md) | Spike detection pipeline |
-| [Deployment](DEPLOYMENT.md) | Local dev + VPS production |
-| [Contributing](CONTRIBUTING.md) | Style, git + PR conventions |
-| [Security](SECURITY.md) | Practices + vulnerability reporting |
+| Document                        | Description                          |
+| ------------------------------- | ------------------------------------ |
+| [API Reference](API.md)         | Endpoints, request/response examples |
+| [Database Schema](SCHEMA.md)    | User, Job, Clip tables               |
+| [Algorithm](ALGORITHM.md)       | Spike detection pipeline             |
+| [Deployment](DEPLOYMENT.md)     | Local dev + VPS production           |
+| [Contributing](CONTRIBUTING.md) | Style, git + PR conventions          |
+| [Security](SECURITY.md)         | Practices + vulnerability reporting  |
 
 ---
 
