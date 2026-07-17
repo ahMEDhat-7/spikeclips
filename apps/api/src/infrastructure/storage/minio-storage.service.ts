@@ -41,8 +41,16 @@ export class MinioStorageService implements StorageService, OnModuleInit {
 
     const exists = await this.client.bucketExists(this.bucket);
     if (!exists) {
-      await this.client.makeBucket(this.bucket, "us-east-1");
-      this.logger.log(`Created MinIO bucket: ${this.bucket}`);
+      try {
+        await this.client.makeBucket(this.bucket, "us-east-1");
+        this.logger.log(`Created MinIO bucket: ${this.bucket}`);
+      } catch (err) {
+        if (err instanceof Minio.S3Error && err.code === "BucketAlreadyOwnedByYou") {
+          this.logger.log(`MinIO bucket already exists: ${this.bucket}`);
+        } else {
+          throw err;
+        }
+      }
     } else {
       this.logger.log(`MinIO bucket exists: ${this.bucket}`);
     }
