@@ -42,14 +42,15 @@ pnpm dev:web          # Start Web only
 
 ### Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 3000 | Next.js dev server |
-| API | 3001 | NestJS API server |
-| Swagger | 3001/api/docs | API documentation |
-| PostgreSQL | 5433 | Database |
-| Redis | 6380 | Job queues |
-| MinIO | 9000/9001 | Object storage |
+| Service | Port | Access | Description |
+|---------|------|--------|-------------|
+| Frontend | 3000 | Via nginx (port 80) | Next.js app |
+| API | 3001 | Internal only (via Next.js proxy) | NestJS API |
+| Swagger | 3001/api/docs | Local dev only | API documentation |
+| PostgreSQL | 5432 | Internal only (Docker network) | Database |
+| Redis | 6379 | Internal only (Docker network) | Job queues |
+| MinIO | 9000/9001 | Internal only (Docker network) | Object storage |
+| nginx | 80 | Public | Reverse proxy → web only |
 
 ### Storage
 
@@ -130,9 +131,9 @@ Changes:
 
 - HTTP → HTTPS redirect
 - SSL via Let's Encrypt / Certbot
-- Rate limiting: 30 req/min (API), 5 req/min (auth)
-- Security headers (CSP, HSTS, X-Frame-Options)
-- Proxy to API (127.0.0.1:3001) and Web (127.0.0.1:3000)
+- Reverse proxy to **web only** (127.0.0.1:3000)
+- API traffic routes through Next.js internal proxy (`/api/[...path]/route.ts`)
+- Security headers via include files (CSP handled by Next.js)
 
 ### Post-Setup
 

@@ -11,7 +11,7 @@ Turborepo monorepo with pnpm workspaces:
 - `apps/web/` — Next.js 16 frontend (App Router, Tailwind 4, React 19)
 - `apps/api/` — NestJS 11 backend (health check endpoint, ready for services)
 - `packages/shared/` — Shared types (HeatmapSpike, Job, Clip, User, AlgorithmConfig)
-- `docker/` — Postgres 16 + Redis 7 for local dev
+- `docker/` — Postgres 18 + Redis 8 + MinIO for local dev
 
 ## Commands
 
@@ -41,7 +41,7 @@ docker compose -f docker/docker-compose.yml up -d
 
 ## Algorithm Reference
 
-`CreateYTShorts.py` contains the canonical spike merging algorithm (v2). This is the source of truth for the algorithm that will be ported to `packages/shared/algorithm/`. Key parameters: gap tolerance 5s, intensity delta 0.25, floor 0.40, min clip 3s, max clip 60s.
+The spike merging algorithm has been ported to TypeScript at `packages/shared/src/algorithm/merge.ts`. Canonical defaults in `packages/shared/src/types.ts` (`DEFAULT_ALGORITHM_CONFIG`). Key parameters: gap tolerance 5s, intensity delta 0.25, floor 0.40, min clip 3s, max clip 60s.
 
 ## Git Conventions
 

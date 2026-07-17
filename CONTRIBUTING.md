@@ -74,13 +74,23 @@ pnpm --filter @spikeclips/web test           # Frontend tests
 ## Project Structure
 
 ```
-spikeclips/
+SpikeClip/
 ├── apps/
-│   ├── api/          # NestJS 11 backend
-│   └── web/          # Next.js 16 frontend
+│   ├── api/            # NestJS 11 backend
+│   │   └── src/
+│   │       ├── domain/         # Entities, value objects, repository interfaces
+│   │       ├── application/    # Use cases, DTOs, mappers
+│   │       ├── infrastructure/ # Database, storage, external services, workers
+│   │       └── presentation/   # Controllers (API)
+│   └── web/            # Next.js 16 frontend
+│       └── src/
+│           ├── domain/         # Ports (interfaces)
+│           ├── application/    # Hooks, use cases
+│           ├── infrastructure/ # API clients
+│           └── presentation/   # Components, pages
 ├── packages/
-│   └── shared/       # Shared types + algorithm
-├── deploy/           # VPS deployment scripts
-├── docker/           # Docker Compose + Nginx
-└── docs/             # PRD, plan, tasks
+│   └── shared/         # Shared types + spike algorithm
+├── deploy/             # VPS deployment scripts
+├── docker/             # Docker Compose + Nginx
+└── docs/               # PRD, plan, tasks
 ```
