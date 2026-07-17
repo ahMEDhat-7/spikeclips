@@ -203,7 +203,7 @@ Unlike AI-guessing products (OpusClip, Vexub), SpikeClip uses actual viewer beha
 
 | Requirement | Implementation |
 |-------------|----------------|
-| Authentication | NextAuth.js (Google, GitHub, Email) |
+| Authentication | Google OAuth 2.0 (cookie-based JWT) |
 | Authorization | Role-based (Free, Pro, Team) |
 | API rate limiting | 100 req/min (metadata), 10 req/min (processing) |
 | Input validation | Zod schemas on all endpoints |
@@ -290,7 +290,7 @@ Unlike AI-guessing products (OpusClip, Vexub), SpikeClip uses actual viewer beha
 └────────────────────────┬─────────────────────────────────────────┘
 ┌────────────────────────▼─────────────────────────────────────────┐
 │                      DATA LAYER                                  │
-│   PostgreSQL (Neon) · Redis (Upstash) · Cloudflare R2 (S3)       │
+│   PostgreSQL 18 · Redis 8 · MinIO (object storage)             │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -301,14 +301,17 @@ spikeclips/
 ├── apps/
 │   ├── web/                 # Next.js 16 frontend
 │   │   ├── src/app/         # App Router pages
-│   │   ├── src/components/
-│   │   └── src/lib/         # API client, utils
+│   │   ├── src/presentation/# Components
+│   │   ├── src/application/ # Hooks, use cases
+│   │   ├── src/infrastructure/ # API clients
+│   │   └── src/domain/      # Ports (interfaces)
 │   └── api/                 # NestJS backend
-│       ├── src/modules/     # auth, jobs, clips, users
-│       ├── src/services/    # yt-dlp, ffmpeg, heatmap, storage
-│       └── src/workers/     # heatmap.worker.ts, clip.worker.ts
-├── packages/shared/         # types, algorithm, utils — shared by both apps
-├── docker/                  # docker-compose.yml, Dockerfile.api
+│       ├── src/domain/      # Entities, value objects
+│       ├── src/application/ # Use cases, DTOs
+│       ├── src/infrastructure/ # Database, storage, workers
+│       └── src/presentation/ # Controllers
+├── packages/shared/         # types, algorithm — shared by both apps
+├── docker/                  # docker-compose, nginx config
 └── turbo.json
 ```
 
@@ -430,23 +433,18 @@ CREATE TABLE clips (
 ## 11. Tech Stack
 
 **Frontend (Next.js 16):**
-- Next.js 16, React 19, TypeScript 5
+- Next.js 16, React 19, TypeScript 7
 - Tailwind CSS 4, shadcn/ui
 - Recharts (heatmap chart)
-- Zustand (state), React Query (data fetching)
-- NextAuth.js 5
 
 **Backend (NestJS):**
-- NestJS 11, TypeScript 5
+- NestJS 11, TypeScript 7
 - Prisma 6 (ORM), BullMQ 5
-- Redis 7, Zod 3 (validation)
-- Pino 9 (logging)
+- Zod 3 (validation), Pino 9 (logging)
 
 **Infrastructure:**
-- PostgreSQL (Neon), Redis (Upstash)
-- Cloudflare R2 (storage)
-- Vercel (frontend hosting)
-- Railway/Hetzner (backend hosting)
+- PostgreSQL 18, Redis 8, MinIO (Docker Compose)
+- Self-hosted VPS (Hetzner)
 - Stripe (payments)
 
 ---
@@ -528,7 +526,7 @@ The canonical merge algorithm (v2) includes:
 5. **Min-duration filtering** (sub-3s slivers dropped)
 6. **Non-overlap + minimum spacing** on final top-N
 
-Reference implementation: `spike_merger.py` → port to `packages/shared/algorithm`
+Reference implementation: `packages/shared/src/algorithm/merge.ts` (TypeScript port of `CreateYTShorts.py`)
 
 ---
 

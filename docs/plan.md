@@ -107,7 +107,7 @@ _Note:_ the Team tier (batch/agency) is real future upside but is out of scope f
 └────────────────────────┬─────────────────────────────────────────┘
 ┌────────────────────────▼─────────────────────────────────────────┐
 │                      DATA LAYER                                  │
-│   PostgreSQL (Neon) · Redis (Upstash) · Cloudflare R2 (S3)       │
+│   PostgreSQL 18 · Redis 8 · MinIO (object storage)             │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -279,7 +279,7 @@ _Treat these as the target shape, not day-one requirements — at Phase 5 launch
 
 | Requirement          | Implementation                                        |
 | -------------------- | ----------------------------------------------------- |
-| Authentication       | NextAuth.js (Google, GitHub, Email)                   |
+| Authentication       | Google OAuth 2.0 (cookie-based JWT)                    |
 | Authorization        | Role-based (Free, Pro, Team)                          |
 | API rate limiting    | 100 req/min (metadata), 10 req/min (processing)       |
 | Input validation     | Zod schemas on all endpoints                          |
@@ -310,11 +310,7 @@ _Treat these as the target shape, not day-one requirements — at Phase 5 launch
 
 | Component   | Platform               | Cost      |
 | ----------- | ---------------------- | --------- |
-| Frontend    | Vercel                 | Free tier |
-| Backend     | Railway or Hetzner VPS | $5–20/mo  |
-| Database    | Neon (PostgreSQL)      | Free tier |
-| Cache/Queue | Upstash (Redis)        | $10/mo    |
-| Storage     | Cloudflare R2          | $5/mo     |
+| All-in-one  | Self-hosted VPS (Hetzner) | ~€4.5/mo |
 | Domain      | Cloudflare             | ~$10/year |
 
 **NFR-8: Design & Brand Quality** _(new — carries the "elegant creative" requirement into engineering, not just visual polish at the end)_
@@ -434,11 +430,11 @@ CREATE TABLE clips (
 
 ### 8. Tech Stack
 
-**Frontend (Next.js 16):** Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, shadcn/ui, Recharts (heatmap chart), Zustand (state), React Query (data fetching), NextAuth.js 5.
+**Frontend (Next.js 16):** Next.js 16, React 19, TypeScript 7, Tailwind CSS 4, shadcn/ui, Recharts (heatmap chart).
 
-**Backend (NestJS):** NestJS 11, TypeScript 5, Prisma 6 (ORM), BullMQ 5, Redis 7, Zod 3 (validation), Pino 9 (logging).
+**Backend (NestJS):** NestJS 11, TypeScript 7, Prisma 6 (ORM), BullMQ 5, Zod 3 (validation), Pino 9 (logging).
 
-**Infrastructure:** PostgreSQL (Neon), Redis (Upstash), Cloudflare R2, Vercel (frontend hosting), Railway/Hetzner (backend hosting), Stripe (payments).
+**Infrastructure:** PostgreSQL 18, Redis 8, MinIO (Docker Compose), Self-hosted VPS (Hetzner), Stripe (payments).
 
 ---
 
@@ -538,17 +534,13 @@ At 20 hrs/week on Phase 5 alone: ~9 weeks. At 30 hrs/week: ~6 weeks.
 
 ## Part IV — Reference
 
-### Cost Breakdown (Monthly, at Phase 5 scale)
+### Cost Breakdown (Monthly)
 
 | Service                   | Cost          | Notes                   |
 | ------------------------- | ------------- | ----------------------- |
-| Vercel (frontend)         | $0            | Free tier sufficient    |
-| Railway/Hetzner (backend) | $5–20         | Depends on traffic      |
-| Neon (PostgreSQL)         | $0            | Free tier, 0.5GB        |
-| Upstash (Redis)           | $10           | 10K commands/day        |
-| Cloudflare R2             | $5            | 10GB storage + requests |
+| Hetzner VPS               | ~€4.5/mo      | 2c/4t, 8GB, 80GB NVMe  |
 | Domain                    | ~$1/mo        | ~$10/year               |
-| **Total**                 | **$21–36/mo** |                         |
+| **Total**                 | **~$6/mo**    |                         |
 
 ### Test Cases (Video-Type Processing)
 
@@ -585,7 +577,7 @@ The prototype had three conflicting merge implementations. FR-3 above locks the 
 3. **Min-duration filtering**, so sub-3-second slivers never make it into the top-N.
 4. **Non-overlap + minimum spacing** on the final top-N, so the three delivered scenes are spread across the video instead of being three overlapping slices of one giant block.
 
-Reference implementation and test scenarios (edge case, long-block capping, timeline diversity, sliver filtering) live in `spike_merger.py`. Port this into `packages/shared/algorithm`; archive the three prototype files rather than keeping them in the codebase.
+Reference implementation and test scenarios live in `packages/shared/src/algorithm/merge.ts` (TypeScript port of `CreateYTShorts.py`).
 
 ### Appendix B — Design & Brand Standard
 

@@ -883,23 +883,23 @@
 
 ---
 
-### Task 5.2.7: Implement R2 Storage Integration
+### Task 5.2.7: Implement MinIO Storage Integration
 
-**Description:** Set up Cloudflare R2 for storing processed clips.
+**Description:** Set up MinIO for storing processed clips (self-hosted object storage).
 
 **Acceptance criteria:**
-- [ ] R2 client configured
+- [ ] MinIO client configured
 - [ ] Upload function works
-- [ ] Signed, expiring download URLs generated
-- [ ] Auto-cleanup after 7 days configured
+- [ ] Signed, expiring download URLs generated (via API endpoint)
+- [ ] Clips served through API (not direct MinIO access)
 
 **Verification:**
-- [ ] Can upload and retrieve a file from R2
+- [ ] Can upload and retrieve a file from MinIO
 
 **Dependencies:** Task 5.1.1
 
 **Files likely touched:**
-- `apps/api/src/services/storage.service.ts`
+- `apps/api/src/infrastructure/storage/minio-storage.service.ts`
 
 **Estimated scope:** Small (1-2 files)
 
@@ -965,26 +965,25 @@
 
 ---
 
-### Task 5.3.1: Implement NextAuth.js Authentication
+### Task 5.3.1: Implement Google OAuth Authentication
 
-**Description:** Set up NextAuth.js with Google, GitHub, and Email providers.
+**Description:** Set up Google OAuth 2.0 with cookie-based JWT sessions.
 
 **Acceptance criteria:**
-- [ ] NextAuth.js configured
-- [ ] Google OAuth working
-- [ ] GitHub OAuth working
-- [ ] Email magic link working
-- [ ] Session management functional
+- [ ] Google OAuth configured
+- [ ] Google login working
+- [ ] Session management functional (httpOnly cookie)
+- [ ] Logout working
 
 **Verification:**
-- [ ] Can sign in with all three methods
+- [ ] Can sign in with Google
 
 **Dependencies:** Core features complete
 
 **Files likely touched:**
-- `apps/web/src/app/api/auth/[...nextauth]/route.ts`
-- `apps/web/src/lib/auth.ts`
-- `apps/api/src/modules/auth/auth.module.ts`
+- `apps/api/src/infrastructure/auth/strategies/google.strategy.ts`
+- `apps/api/src/infrastructure/auth/auth.controller.ts`
+- `apps/api/src/infrastructure/auth/auth.service.ts`
 
 **Estimated scope:** Medium (3-5 files)
 
@@ -1188,7 +1187,7 @@
 ---
 
 ### Checkpoint: Monetization & Polish Complete
-- [ ] Authentication working (Google, GitHub, Email)
+- [ ] Authentication working (Google OAuth)
 - [ ] User dashboard functional
 - [ ] Stripe payments working
 - [ ] Credit limits enforced
