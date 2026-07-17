@@ -1,12 +1,13 @@
 # API Reference
 
-All endpoints prefixed with `/api`. Swagger docs available at `/api/docs`.
+All endpoints prefixed with `/api`. The API is not exposed directly — all traffic routes through the Next.js web app's internal proxy (`/api/[...path]/route.ts`).
 
 ## Authentication
 
-All protected endpoints use httpOnly cookies for JWT authentication:
+SpikeClip uses **Google OAuth 2.0 only**. Sessions are cookie-based JWTs (`httpOnly`, signed with `JWT_SECRET`).
 
-- `POST /api/auth/register` and `POST /api/auth/login` set the `access_token` cookie automatically
+- `GET /api/auth/google` — Redirects to Google OAuth consent screen
+- `GET /api/auth/google/callback` — Handles Google callback, sets `access_token` cookie, redirects to dashboard
 - Subsequent requests include the cookie automatically (with `credentials: "include"`)
 - Swagger UI can also use Bearer token in the Authorization header
 
@@ -20,59 +21,18 @@ All protected endpoints use httpOnly cookies for JWT authentication:
 
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
-| `POST` | `/api/auth/register` | Public | 5/min | Create account, sets JWT cookie |
-| `POST` | `/api/auth/login` | Public | 5/min | Login, sets JWT cookie |
-| `POST` | `/api/auth/logout` | Bearer | Global | Clear JWT cookie |
+| `GET` | `/api/auth/google` | Public | 10/min | Redirect to Google OAuth consent |
+| `GET` | `/api/auth/google/callback` | Public | 10/min | Google callback, sets JWT cookie |
+| `POST` | `/api/auth/logout` | Public | Global | Clear JWT cookie |
 | `GET` | `/api/auth/me` | Bearer | Global | Get current user profile |
-| `PATCH` | `/api/auth/me` | Bearer | Global | Update profile (name, email) |
-| `POST` | `/api/auth/change-password` | Bearer | Global | Change password |
+| `PATCH` | `/api/auth/me` | Bearer | Global | Update profile (name) |
 
-### Register
+### Google OAuth Flow
 
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword",
-  "name": "John Doe"
-}
-```
-
-**Response (201):** Sets `access_token` httpOnly cookie
-```json
-{
-  "userId": "uuid",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "plan": "free",
-  "analysesUsed": 0,
-  "analysesLimit": 3,
-  "scenesLimit": 3
-}
-```
-
-### Login
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
-
-**Response (200):** Sets `access_token` httpOnly cookie
-```json
-{
-  "userId": "uuid",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "plan": "free",
-  "analysesUsed": 1,
-  "analysesLimit": 3,
-  "scenesLimit": 3
-}
-```
+1. Frontend redirects user to `GET /api/auth/google`
+2. User consents on Google
+3. Google redirects to `GET /api/auth/google/callback`
+4. API creates/updates user, sets `access_token` cookie, redirects to `/dashboard`
 
 ### Logout
 
@@ -102,24 +62,11 @@ All protected endpoints use httpOnly cookies for JWT authentication:
 **Request:**
 ```json
 {
-  "name": "Jane Doe",
-  "email": "jane@example.com"
+  "name": "Jane Doe"
 }
 ```
 
 **Response (200):** Updated user profile
-
-### Change Password
-
-**Request:**
-```json
-{
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword"
-}
-```
-
-**Response (200):** `{ "message": "Password changed" }`
 
 ---
 
@@ -132,7 +79,7 @@ All protected endpoints use httpOnly cookies for JWT authentication:
 | `GET` | `/api/jobs/:id` | Bearer | Global | Get job by ID |
 | `POST` | `/api/jobs/:id/process` | Bearer | 5/min | Run algorithm on heatmap |
 | `POST` | `/api/jobs/:id/export` | Bearer | 3/min | Export clips for scenes |
-| `GET` | `/api/jobs/:id/clips` | Bearer | Global | Get clips for job |
+| `GET` | `/api/clips/job/:jobId` | Bearer | Global | Get clips for job |
 
 ### Create Job
 
@@ -250,8 +197,8 @@ Runs the spike merging algorithm on the job's heatmap data.
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
 | `GET` | `/api/clips/job/:jobId` | Bearer | Global | List clips by job ID |
-| `GET` | `/api/clips/:id/download` | Bearer | Global | Download clip (redirect to signed URL) |
-| `GET` | `/api/clips/download/:key` | Bearer | Global | Download by storage key (signed URL) |
+| `GET` | `/api/clips/:id/download` | Bearer (Pro/Team) | Global | Download clip (redirect to signed URL) |
+| `GET` | `/api/clips/download/:key` | Public | Global | Serve clip file (HMAC-signed URL) |
 
 ### List Clips
 
@@ -277,7 +224,12 @@ Runs the spike merging algorithm on the job's heatmap data.
 
 ### Download Clip
 
-**Response:** 302 redirect to signed URL (MinIO) or local file.
+**Flow:**
+1. `GET /api/clips/:id/download` — verifies ownership + Pro/Team plan, generates HMAC-signed URL
+2. Returns 302 redirect to `GET /api/clips/download/:key?expires=...&sig=...`
+3. `GET /api/clips/download/:key` — verifies HMAC signature, streams file from storage (MinIO or local disk)
+
+The signed URL points to the API's own endpoint, not directly to MinIO. The API handles all file serving internally.
 
 ---
 
@@ -297,7 +249,7 @@ Runs the spike merging algorithm on the job's heatmap data.
 {
   "id": "user-id/uuid-filename.mp3",
   "name": "track.mp3",
-  "url": "http://localhost:3001/api/clips/download/...",
+  "url": "https://spikeclips.com/api/clips/download/...",
   "size": 1048576
 }
 ```
@@ -317,10 +269,10 @@ Runs the spike merging algorithm on the job's heatmap data.
 |------|-------------|
 | 200 | Success |
 | 201 | Created |
+| 302 | Redirect (signed URL) |
 | 400 | Bad request (invalid input) |
 | 401 | Unauthorized (missing/invalid token) |
-| 403 | Forbidden (quota exceeded) |
+| 403 | Forbidden (quota exceeded or plan required) |
 | 404 | Resource not found |
-| 409 | Conflict (e.g., email already registered) |
 | 429 | Rate limit exceeded |
 | 500 | Internal server error |
