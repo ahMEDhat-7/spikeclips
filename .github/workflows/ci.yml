@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -52,9 +52,9 @@ jobs:
     name: API E2E (compose infra)
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@localhost:5433/spikeclips
+      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@localhost:5432/spikeclips
       REDIS_HOST: localhost
-      REDIS_PORT: "6380"
+      REDIS_PORT: "6379"
       REDIS_PASSWORD: spikeclips_dev_redis
       NODE_ENV: test
       # App bootstrap secrets for e2e (dummy values; no real services hit)
@@ -92,25 +92,25 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Start infra (postgres, redis, minio) via docker compose
-        run: docker compose -f docker-compose.yml up -d postgres redis minio
+        run: docker compose up -d postgres redis minio
       - name: Wait for postgres to accept connections
         run: |
           for i in $(seq 1 20); do
-            if docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
+            if docker compose exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
               echo "postgres ready after ${i} tries"; break
             fi
             sleep 3
           done
-          docker compose -f docker-compose.yml exec -T postgres pg_isready -U spikeclips
+          docker compose exec -T postgres pg_isready -U spikeclips
       - name: Dump postgres logs
         if: always()
-        run: docker compose -f docker-compose.yml logs postgres
+        run: docker compose logs postgres
       - run: pnpm --filter @spikeclips/api exec prisma generate
       - run: pnpm --filter @spikeclips/api exec prisma migrate deploy
       - run: pnpm --filter @spikeclips/api test:e2e
       - name: Tear down
         if: always()
-        run: docker compose -f docker-compose.yml down -v
+        run: docker compose down -v
 
   build:
     name: Build
@@ -131,4 +131,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build api and web images
-        run: docker compose -f docker-compose.yml build api web
+        run: docker compose build api web

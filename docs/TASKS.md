@@ -699,7 +699,7 @@
 **Files likely touched:**
 - `apps/api/src/workers/heatmap.worker.ts`
 - `apps/api/src/workers/clip.worker.ts`
-- `docker/docker-compose.yml`
+- `docker-compose.yml`
 
 **Estimated scope:** Medium (3-4 files)
 
@@ -720,7 +720,7 @@
 **Dependencies:** Tasks 5.1.2, 5.1.3, 5.1.7, 5.1.8
 
 **Files likely touched:**
-- `docker/docker-compose.yml`
+- `docker-compose.yml`
 
 **Estimated scope:** Small (1 file)
 

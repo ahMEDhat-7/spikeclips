@@ -55,7 +55,7 @@ docs: add API reference
 git clone git@github.com:ahmedhat/SpikeClip.git
 cd spikeclips
 pnpm install
-docker compose -f docker/docker-compose.yml up -d
+./scripts/dev.sh
 cp .env.example apps/api/.env
 pnpm --filter @spikeclips/api prisma:migrate
 pnpm dev
@@ -90,7 +90,9 @@ SpikeClip/
 │           └── presentation/   # Components, pages
 ├── packages/
 │   └── shared/         # Shared types + spike algorithm
-├── deploy/             # VPS deployment scripts
-├── docker/             # Docker Compose + Nginx
-└── docs/               # PRD, plan, tasks
+├── deploy/             # VPS deployment (systemd, nginx, scripts)
+├── docker/             # Nginx config for Docker
+├── scripts/            # dev.sh, prod.sh
+├── docs/               # PRD, plan, tasks
+└── docker-compose.yml  # Full stack (all services)
 ```

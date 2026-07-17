@@ -24,22 +24,24 @@ SpikeClip extracts the most-replayed moments from YouTube videos using **actual 
                           │  /api/* → proxy to API (intern) │
                           └──────────────┬──────────────────┘
                                          │ Docker network
-                    ┌────────────────────┼────────────────────┐
-                    │                    │                    │
-         ┌──────────▼──────┐  ┌─────────▼────────┐  ┌───────▼────────┐
-         │ NestJS API :3001│  │  PostgreSQL 18    │  │  Redis 8       │
-         │  (internal only)│  │  (internal only)  │  │ (internal only)│
-         └────────┬────────┘  └──────────────────┘  └────────────────┘
-                  │
-         ┌────────▼────────┐
-         │    MinIO         │
-         │ (internal only)  │
-         └─────────────────┘
+                          ┌──────────────▼──────────────────┐
+                          │    NestJS API :3001              │
+                          │    (internal only)               │
+                          └──────────┬───────────────────────┘
+                                     │
+                     ┌───────────────┼───────────────┐
+                     │               │               │
+         ┌───────────▼─────┐ ┌──────▼───────┐ ┌─────▼───────┐
+         │  PostgreSQL 18  │ │   Redis 8    │ │    MinIO    │
+         │ (localhost:5432)│ │ (localhost:  │ │ (localhost:  │
+         └─────────────────┘ │     6379)    │ │  9000/9001) │
+                             └──────────────┘ └─────────────┘
 ```
 
-- **nginx** is the only entry point. It proxies to the web server only.
-- **API** is not exposed to the internet. The Next.js app proxies `/api/*` requests internally.
-- **PostgreSQL, Redis, MinIO** are internal containers — no host ports exposed.
+- **nginx** is the only public entry point. It proxies to the web server only.
+- **Next.js** handles user-facing concerns and proxies `/api/*` internally. It never connects to Postgres, Redis, or MinIO directly.
+- **NestJS API** is the single backend gateway — all data access flows through it.
+- **PostgreSQL, Redis, MinIO** are only reachable from the API layer.
 
 ---
 
@@ -64,10 +66,10 @@ pnpm install
 ### 2. Start infrastructure
 
 ```bash
-docker compose -f docker-compose.yml up -d
+./scripts/dev.sh
 ```
 
-This starts Postgres, Redis, MinIO, and nginx (port 80). All data services are internal — only nginx is accessible from outside.
+This starts Postgres (5432), Redis (6379), and MinIO (9000/9001) in Docker.
 
 ### 3. Configure environment
 
@@ -75,7 +77,7 @@ This starts Postgres, Redis, MinIO, and nginx (port 80). All data services are i
 cp .env.example apps/api/.env
 ```
 
-Set `JWT_SECRET` and your Google OAuth credentials at minimum.
+Set your Google OAuth credentials at minimum.
 
 ### 4. Migrate & run
 
@@ -84,8 +86,8 @@ pnpm --filter @spikeclips/api prisma:migrate
 pnpm dev
 ```
 
-- **Frontend:** http://localhost:3000 (via nginx on port 80)
-- **Swagger:** http://localhost:3001/api/docs (local dev only)
+- **Frontend:** http://localhost:3000
+- **Swagger:** http://localhost:3001/api/docs
 
 ---
 
@@ -98,10 +100,11 @@ SpikeClip/
 │   └── web/            # Next.js 16 frontend (public)
 ├── packages/
 │   └── shared/         # shared types + spike algorithm
-├── deploy/             # VPS deployment (compose + nginx)
-├── docker/             # local dev compose + nginx config
+├── deploy/             # VPS deployment (systemd, nginx, scripts)
+├── docker/             # Nginx config for Docker
+├── scripts/            # dev.sh, prod.sh
 ├── docs/               # PRD, plan, tasks
-└── turbo.json          # Turborepo pipeline
+└── docker-compose.yml  # Full stack (all services)
 ```
 
 ---

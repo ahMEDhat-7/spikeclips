@@ -16,10 +16,10 @@ git clone git@github.com:ahmedhat/SpikeClip.git
 cd spikeclips
 pnpm install
 
-# Start Docker services
-docker compose -f docker/docker-compose.yml up -d
+# Start infrastructure containers (Postgres, Redis, MinIO)
+./scripts/dev.sh
 
-# Set up environment
+# Set up environment (in another terminal)
 cp .env.example apps/api/.env
 
 # Run migrations
@@ -47,9 +47,9 @@ pnpm dev:web          # Start Web only
 | Frontend | 3000 | Via nginx (port 80) | Next.js app |
 | API | 3001 | Internal only (via Next.js proxy) | NestJS API |
 | Swagger | 3001/api/docs | Local dev only | API documentation |
-| PostgreSQL | 5432 | Internal only (Docker network) | Database |
-| Redis | 6379 | Internal only (Docker network) | Job queues |
-| MinIO | 9000/9001 | Internal only (Docker network) | Object storage |
+| PostgreSQL | 5432 | localhost (Docker network) | Database |
+| Redis | 6379 | localhost (Docker network) | Job queues |
+| MinIO | 9000/9001 | localhost (Docker network) | Object storage |
 | nginx | 80 | Public | Reverse proxy → web only |
 
 ### Storage

@@ -11,7 +11,10 @@ Turborepo monorepo with pnpm workspaces:
 - `apps/web/` — Next.js 16 frontend (App Router, Tailwind 4, React 19)
 - `apps/api/` — NestJS 11 backend (health check endpoint, ready for services)
 - `packages/shared/` — Shared types (HeatmapSpike, Job, Clip, User, AlgorithmConfig)
-- `docker/` — Postgres 18 + Redis 8 + MinIO for local dev
+- `docker/` — Nginx config for Docker reverse proxy
+- `deploy/` — VPS deployment (systemd, nginx, scripts)
+- `scripts/` — dev.sh (local dev), prod.sh (VPS production)
+- `docker-compose.yml` — Full stack (Postgres, Redis, MinIO, API, Web, nginx)
 
 ## Commands
 
@@ -26,8 +29,11 @@ pnpm test         # Test all apps
 pnpm --filter @spikeclips/web dev
 pnpm --filter @spikeclips/api dev
 
-# Docker services
-docker compose -f docker/docker-compose.yml up -d
+# Local dev (infra containers + pnpm dev)
+./scripts/dev.sh
+
+# VPS production (infra containers + systemd)
+./scripts/prod.sh
 ```
 
 ## Key Conventions

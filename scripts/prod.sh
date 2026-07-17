@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+echo "=== SpikeClip Production Start ==="
+echo ""
 
-cd "$PROJECT_DIR"
-
-echo "=== Starting SpikeClip ==="
-
-echo "Starting infrastructure services..."
+echo "Starting infrastructure containers (Postgres, Redis, MinIO)..."
 docker compose up -d postgres redis minio
 
 echo "Waiting for services to be healthy..."
@@ -23,6 +19,7 @@ sudo systemctl start spikeclips-web
 echo "Starting Nginx..."
 sudo systemctl start nginx
 
+echo ""
 echo "=== All services started ==="
 echo "  API:   https://spikeclips.com/api"
 echo "  Web:   https://spikeclips.com"

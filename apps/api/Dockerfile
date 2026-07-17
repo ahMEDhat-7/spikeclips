@@ -59,7 +59,6 @@ RUN pnpm install --frozen-lockfile --prod
 # Copy built artifacts
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/packages/shared ./packages/shared
 COPY apps/api/entrypoint.sh ./apps/api/entrypoint.sh
 RUN chmod +x ./apps/api/entrypoint.sh
 

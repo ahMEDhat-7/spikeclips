@@ -4,6 +4,8 @@ services:
     image: postgres:18-alpine
     container_name: spikeclips-postgres
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     shm_size: 256mb
     environment:
       POSTGRES_USER: spikeclips
@@ -28,6 +30,8 @@ services:
     image: redis:8-alpine
     container_name: spikeclips-redis
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD:-spikeclips_dev_redis}
     volumes:
       - redis_data:/data
@@ -130,7 +134,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - api
       - web
@@ -146,6 +150,9 @@ services:
     image: minio/minio:latest
     container_name: spikeclips-minio
     restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
