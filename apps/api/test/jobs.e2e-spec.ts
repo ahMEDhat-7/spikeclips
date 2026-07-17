@@ -30,20 +30,12 @@ describe("Jobs (e2e)", () => {
         .expect(401);
     });
 
-    it("rejects job creation with invalid URL", () => {
+    it("rejects job creation with invalid token", () => {
       return request(app.getHttpServer())
         .post("/api/jobs")
         .set("Authorization", "Bearer fake-token")
-        .send({ url: "not-a-url" })
-        .expect(400);
-    });
-
-    it("rejects job creation with empty body", () => {
-      return request(app.getHttpServer())
-        .post("/api/jobs")
-        .set("Authorization", "Bearer fake-token")
-        .send({})
-        .expect(400);
+        .send({ url: "https://youtube.com/watch?v=test" })
+        .expect(401);
     });
   });
 

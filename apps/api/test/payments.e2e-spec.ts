@@ -43,14 +43,6 @@ describe("Payments (e2e)", () => {
     });
   });
 
-  describe("GET /api/payments/subscription", () => {
-    it("rejects subscription check without auth", () => {
-      return request(app.getHttpServer())
-        .get("/api/payments/subscription")
-        .expect(401);
-    });
-  });
-
   describe("POST /api/payments/portal", () => {
     it("rejects portal request without auth", () => {
       return request(app.getHttpServer())

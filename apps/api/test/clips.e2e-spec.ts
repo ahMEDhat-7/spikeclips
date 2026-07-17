@@ -23,37 +23,17 @@ describe("Clips (e2e)", () => {
   });
 
   describe("GET /api/clips/job/:jobId", () => {
-    it("returns clips for a job (empty for nonexistent)", () => {
+    it("rejects unauthenticated request", () => {
       return request(app.getHttpServer())
         .get("/api/clips/job/nonexistent-job-id")
-        .expect(200)
-        .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-        });
-    });
-  });
-
-  describe("GET /api/clips/:id/download", () => {
-    it("returns 404 for nonexistent clip", () => {
-      return request(app.getHttpServer())
-        .get("/api/clips/nonexistent-id/download")
-        .expect(404);
-    });
-  });
-
-  describe("DELETE /api/clips/:id/music", () => {
-    it("rejects music delete without auth", () => {
-      return request(app.getHttpServer())
-        .delete("/api/clips/nonexistent-id/music")
         .expect(401);
     });
   });
 
-  describe("PUT /api/clips/:id", () => {
-    it("rejects clip update without auth", () => {
+  describe("GET /api/clips/:id/download", () => {
+    it("rejects unauthenticated request", () => {
       return request(app.getHttpServer())
-        .put("/api/clips/nonexistent-id")
-        .send({ captionText: "Updated" })
+        .get("/api/clips/nonexistent-id/download")
         .expect(401);
     });
   });

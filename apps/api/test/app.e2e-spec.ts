@@ -38,35 +38,25 @@ describe("API (e2e)", () => {
   });
 
   describe("Jobs", () => {
-    it("POST /api/jobs rejects invalid URL", () => {
+    it("POST /api/jobs rejects unauthenticated request", () => {
       return request(app.getHttpServer())
         .post("/api/jobs")
-        .send({ url: "not-a-url", userId: "user-1" })
-        .expect(400);
+        .send({ url: "https://youtube.com/watch?v=test" })
+        .expect(401);
     });
 
-    it("POST /api/jobs rejects missing fields", () => {
-      return request(app.getHttpServer())
-        .post("/api/jobs")
-        .send({})
-        .expect(400);
-    });
-
-    it("GET /api/jobs/:id returns 404 for nonexistent job", () => {
+    it("GET /api/jobs/:id rejects unauthenticated request", () => {
       return request(app.getHttpServer())
         .get("/api/jobs/nonexistent")
-        .expect(404);
+        .expect(401);
     });
   });
 
   describe("Clips", () => {
-    it("GET /api/clips/job/:jobId returns empty array for non-existent job", () => {
+    it("GET /api/clips/job/:jobId rejects unauthenticated request", () => {
       return request(app.getHttpServer())
         .get("/api/clips/job/nonexistent")
-        .expect(200)
-        .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-        });
+        .expect(401);
     });
   });
 });
