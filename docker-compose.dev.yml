@@ -16,7 +16,7 @@ services:
       PORT: 3001
       NODE_ENV: development
       FRONTEND_URL: http://localhost
-      BACKEND_URL: http://api:3001
+      BACKEND_URL: http://localhost
       ALLOWED_ORIGINS: http://localhost,http://localhost:3000
       JWT_SECRET: ${JWT_SECRET:-spikeclips-dev-jwt-secret-change-in-production}
       CLIPS_DIR: /tmp/spikeclips-clips

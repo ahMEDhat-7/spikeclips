@@ -35,6 +35,7 @@ async function proxyRequest(req: NextRequest) {
   const init: RequestInit = {
     method: req.method,
     headers,
+    redirect: "manual",
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -44,6 +45,14 @@ async function proxyRequest(req: NextRequest) {
   }
 
   const res = await fetch(targetUrl, init);
+
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location");
+    if (location) {
+      return NextResponse.redirect(location, res.status);
+    }
+  }
+
   const responseHeaders = new Headers();
 
   res.headers.forEach((value, key) => {
