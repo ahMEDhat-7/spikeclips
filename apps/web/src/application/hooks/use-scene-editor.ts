@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScoredBlock } from "@/domain/entities/job";
 
 export interface EditableScene {
@@ -13,7 +13,11 @@ export interface EditableScene {
 
 export type AddMode = "idle" | "waiting_for_end";
 
-export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: number) {
+export function useSceneEditor(
+  suggestedScenes: ScoredBlock[],
+  scenesLimit: number,
+  onScenesChange?: (scenes: EditableScene[]) => void
+) {
   const [scenes, setScenes] = useState<EditableScene[]>(() =>
     suggestedScenes.map((s) => ({
       start_time: s.start_time,
@@ -28,6 +32,10 @@ export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: numb
   const [addStart, setAddStart] = useState<number | null>(null);
 
   const canAddMore = scenes.length < scenesLimit;
+
+  useEffect(() => {
+    onScenesChange?.(scenes);
+  }, [scenes, onScenesChange]);
 
   const startAddScene = useCallback((time: number) => {
     setAddMode("waiting_for_end");
@@ -62,7 +70,7 @@ export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: numb
 
     setAddMode("idle");
     setAddStart(null);
-  }, [addStart]);
+  }, [addStart, canAddMore]);
 
   const cancelAddScene = useCallback(() => {
     setAddMode("idle");
@@ -70,14 +78,15 @@ export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: numb
   }, []);
 
   const updateSceneTime = useCallback((index: number, field: "start_time" | "end_time", time: number) => {
-    setScenes((prev) =>
-      prev.map((s, i) => {
+    setScenes((prev) => {
+      const updated = prev.map((s, i) => {
         if (i !== index) return s;
-        const updated = { ...s, [field]: time };
-        if (updated.end_time <= updated.start_time) return s;
-        return updated;
-      })
-    );
+        const next = { ...s, [field]: time };
+        if (next.end_time <= next.start_time) return s;
+        return next;
+      });
+      return updated;
+    });
   }, []);
 
   const removeScene = useCallback((index: number) => {
@@ -85,15 +94,14 @@ export function useSceneEditor(suggestedScenes: ScoredBlock[], scenesLimit: numb
   }, []);
 
   const resetToSuggestions = useCallback(() => {
-    setScenes(
-      suggestedScenes.map((s) => ({
-        start_time: s.start_time,
-        end_time: s.end_time,
-        peak_intensity: s.peak_intensity,
-        score: s.score,
-        isCustom: false,
-      }))
-    );
+    const reset = suggestedScenes.map((s) => ({
+      start_time: s.start_time,
+      end_time: s.end_time,
+      peak_intensity: s.peak_intensity,
+      score: s.score,
+      isCustom: false,
+    }));
+    setScenes(reset);
   }, [suggestedScenes]);
 
   const totalDuration = useMemo(

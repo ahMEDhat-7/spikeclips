@@ -1,15 +1,4 @@
-import { PlanTier } from "@spikeclips/shared";
-
-interface UserResponse {
-  id: string;
-  email: string;
-  name: string;
-  plan: PlanTier;
-  analysesUsed: number;
-  analysesLimit: number;
-  scenesLimit: number;
-  createdAt: string;
-}
+import { AuthApiPort, UserResponse } from "../../domain/ports/auth-api.port";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -17,7 +6,7 @@ async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const authApi = {
+export const authApi: AuthApiPort = {
   async logout(): Promise<void> {
     await fetch(`${API_BASE}/auth/logout`, {
       method: "POST",

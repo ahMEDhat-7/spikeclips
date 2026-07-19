@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { StudioStep, STEP_LABELS } from "@/domain/entities/studio";
+import { StudioStep } from "@/domain/entities/studio";
+import { STEP_LABELS } from "@/presentation/constants/studio";
 import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 import {
   ArrowLeft,
@@ -11,6 +13,8 @@ import {
   Download,
   RotateCcw,
   LayoutDashboard,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 interface StudioToolbarProps {
@@ -49,6 +53,9 @@ export function StudioToolbar({
   outputQuality = DEFAULT_OUTPUT_QUALITY,
 }: StudioToolbarProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <div className="flex items-center justify-between px-3 py-1.5 border-b bg-background">
@@ -63,11 +70,11 @@ export function StudioToolbar({
         <div className="h-3 w-px bg-border" />
         {showResetConfirm ? (
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground">Reset?</span>
+            <span className="text-xs text-muted-foreground">Reset?</span>
             <Button
               variant="destructive"
               size="sm"
-              className="h-6 px-2 text-[11px]"
+              className="h-6 px-2 text-xs"
               onClick={() => { onReset(); setShowResetConfirm(false); }}
             >
               Yes
@@ -75,7 +82,7 @@ export function StudioToolbar({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-[11px]"
+              className="h-6 px-2 text-xs"
               onClick={() => setShowResetConfirm(false)}
             >
               No
@@ -119,7 +126,7 @@ export function StudioToolbar({
             </div>
           );
         })}
-        <span className="text-[11px] font-medium text-muted-foreground ml-1 hidden sm:inline">
+        <span className="text-xs font-medium text-muted-foreground ml-1 hidden sm:inline">
           {STEP_LABELS[currentStep]}
         </span>
       </div>
@@ -128,6 +135,18 @@ export function StudioToolbar({
         <Button variant="outline" size="sm" onClick={onGoPrev} disabled={!canGoPrev} className="h-7 px-2 text-xs">
           <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
+
+        {mounted && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="h-7 w-7"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </Button>
+        )}
 
         {isLastStep ? (
           <Button

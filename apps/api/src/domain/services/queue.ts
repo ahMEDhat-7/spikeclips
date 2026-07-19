@@ -16,9 +16,18 @@ export interface ExportJobConfig {
     size: number;
     color: string;
     position: string;
+    textAlign?: string;
     startFrame?: number;
     endFrame?: number;
     animation: string;
+    textStyle?: string;
+    opacity?: number;
+    backgroundColor?: string;
+    backgroundEnabled?: boolean;
+    strokeWidth?: number;
+    shadowRadius?: number;
+    x?: number;
+    y?: number;
   }>;
   music?: {
     fileKey: string;

@@ -72,7 +72,7 @@ export function PlatformSelector({ selected, onSelect }: PlatformSelectorProps) 
                 </div>
 
                 {isSelected && (
-                  <p className="text-[11px] text-primary font-medium">
+                  <p className="text-xs text-primary font-medium">
                     This will crop your video to {p.aspectRatio}
                   </p>
                 )}

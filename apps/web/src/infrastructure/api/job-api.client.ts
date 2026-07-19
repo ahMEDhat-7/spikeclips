@@ -1,6 +1,4 @@
-import { JobApiPort, JobResponse, ClipResponse } from "../../domain/ports/job-api.port";
-import { PlatformId } from "../../domain/entities/platform";
-import { OutputFormat, OutputQuality } from "../../domain/entities/export";
+import { JobApiPort, JobResponse, ClipResponse, StudioExportConfig, MusicUploadResponse } from "../../domain/ports/job-api.port";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -9,29 +7,6 @@ interface ApiResponseError {
   statusCode?: number;
   timestamp?: string;
   path?: string;
-}
-
-export interface StudioExportConfig {
-  platform?: PlatformId;
-  format?: OutputFormat;
-  quality?: OutputQuality;
-  captions?: Array<{
-    text: string;
-    font: string;
-    size: number;
-    color: string;
-    position: string;
-    animation: string;
-  }>;
-  music?: {
-    fileKey: string;
-    volume: number;
-    originalVolume: number;
-    fadeIn: number;
-    fadeOut: number;
-  };
-  templateId?: string;
-  templateConfig?: Record<string, unknown>;
 }
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -128,7 +103,7 @@ export class JobApiClient implements JobApiPort {
     return parseJson<ClipResponse[]>(res);
   }
 
-  async uploadMusic(file: File): Promise<{ id: string; name: string; url: string; size: number }> {
+  async uploadMusic(file: File): Promise<MusicUploadResponse> {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -143,7 +118,7 @@ export class JobApiClient implements JobApiPort {
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
-    return parseJson<{ id: string; name: string; url: string; size: number }>(res);
+    return parseJson<MusicUploadResponse>(res);
   }
 
   async deleteMusic(key: string): Promise<void> {

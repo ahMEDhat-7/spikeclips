@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DETAILED_FEATURES } from "@/domain/data/features";
+import { DETAILED_FEATURES } from "@/presentation/constants/features";
 
 export const metadata: Metadata = {
   title: "Features",

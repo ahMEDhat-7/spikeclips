@@ -94,13 +94,13 @@ export class AuthController {
 
   @Get("google")
   @Public()
-  @Throttle({ auth: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 100, ttl: 60_000 } })
   @UseGuards(AuthGuard("google"))
   async googleAuth() {}
 
   @Get("google/callback")
   @Public()
-  @Throttle({ auth: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 100, ttl: 60_000 } })
   @UseGuards(AuthGuard("google"))
   async googleCallback(@Req() req: ExpressRequest & { user?: { accessToken?: string } }, @Res() res: Response) {
     try {

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnimatedHeatmapHero } from "@/presentation/components/features/AnimatedHeatmapHero";
 import { ArrowRight } from "lucide-react";
-import { LANDING_FEATURES } from "@/domain/data/features";
+import { LANDING_FEATURES } from "@/presentation/constants/features";
 
 const stats = [
   { value: "3-60s", label: "Clip duration range" },

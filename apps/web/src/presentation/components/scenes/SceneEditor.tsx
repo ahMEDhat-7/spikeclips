@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { ScoredBlock, HeatmapSpike } from "@/domain/entities/job";
-import { useSceneEditor } from "@/application/hooks/use-scene-editor";
+import { EditableScene, useSceneEditor } from "@/application/hooks/use-scene-editor";
 import { HeatmapChart } from "@/presentation/components/heatmap/HeatmapChart";
 import { EditableSceneCard } from "./EditableSceneCard";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface SceneEditorProps {
   suggestedScenes: ScoredBlock[];
   scenesLimit: number;
   onSceneSelect?: (index: number) => void;
+  onScenesChange?: (scenes: EditableScene[]) => void;
   showExport?: boolean;
   onExport?: (scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>) => void;
   isExporting?: boolean;
@@ -28,6 +29,7 @@ export function SceneEditor({
   onExport,
   isExporting = false,
   onSceneSelect,
+  onScenesChange,
 }: SceneEditorProps) {
   const {
     scenes,
@@ -41,7 +43,7 @@ export function SceneEditor({
     updateSceneTime,
     removeScene,
     resetToSuggestions,
-  } = useSceneEditor(suggestedScenes, scenesLimit);
+  } = useSceneEditor(suggestedScenes, scenesLimit, onScenesChange);
 
   const [hoverTime, setHoverTime] = useState<number | null>(null);
 

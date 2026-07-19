@@ -6,16 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, AlertCircle } from "lucide-react";
-import { formatTime } from "@/lib/format";
+import { formatTime, formatFileSize } from "@/lib/format";
 
 interface ClipCardProps {
   clip: ClipResponse;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function ClipCard({ clip }: ClipCardProps) {

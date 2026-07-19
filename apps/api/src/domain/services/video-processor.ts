@@ -7,6 +7,8 @@ export interface CaptionOverlay {
   animation: string;
   startFrame?: number;
   endFrame?: number;
+  x?: number;
+  y?: number;
 }
 
 export interface MusicMixConfig {

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { jobApi } from "../../infrastructure/api/job-api.client";
+import { useJobApi } from "@/application/providers/api-provider";
 import { Job, JOB_STATUS } from "../../domain/entities/job";
 import { ANALYSIS_POLL_INTERVAL_MS, ANALYSIS_MAX_POLL_ATTEMPTS } from "@/lib/constants";
 
 export function useAnalyzeVideo(onComplete?: () => void) {
+  const jobApi = useJobApi();
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

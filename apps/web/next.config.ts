@@ -4,11 +4,12 @@ const isDev = process.env.NODE_ENV === "development";
 
 const cspDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://www.youtube.com http://www.youtube.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
   `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  "frame-src https://www.youtube.com http://www.youtube.com",
   "frame-ancestors 'none'",
 ];
 

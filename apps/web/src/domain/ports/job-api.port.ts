@@ -1,4 +1,47 @@
 import { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "../entities/job";
+import { PlatformId } from "../entities/platform";
+import { OutputFormat, OutputQuality } from "../entities/export";
+
+export interface StudioExportConfig {
+  platform?: PlatformId;
+  format?: OutputFormat;
+  quality?: OutputQuality;
+  captions?: Array<{
+    text: string;
+    font: string;
+    size: number;
+    color: string;
+    position: string;
+    textAlign?: string;
+    startFrame?: number;
+    endFrame?: number;
+    animation: string;
+    textStyle?: string;
+    opacity?: number;
+    backgroundColor?: string;
+    backgroundEnabled?: boolean;
+    strokeWidth?: number;
+    shadowRadius?: number;
+    x?: number;
+    y?: number;
+  }>;
+  music?: {
+    fileKey: string;
+    volume: number;
+    originalVolume: number;
+    fadeIn: number;
+    fadeOut: number;
+  };
+  templateId?: string;
+  templateConfig?: Record<string, unknown>;
+}
+
+export interface MusicUploadResponse {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+}
 
 export interface JobApiPort {
   createJob(url: string): Promise<JobResponse>;
@@ -7,9 +50,12 @@ export interface JobApiPort {
   processJob(id: string): Promise<JobResponse>;
   exportClips(
     id: string,
-    scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>
+    scenes: Array<{ start_time: number; end_time: number; peak_intensity?: number }>,
+    studioConfig?: StudioExportConfig
   ): Promise<{ jobId: string; clipJobIds: string[] }>;
   getClips(jobId: string): Promise<ClipResponse[]>;
+  uploadMusic(file: File): Promise<MusicUploadResponse>;
+  deleteMusic(key: string): Promise<void>;
 }
 
 export interface JobResponse {

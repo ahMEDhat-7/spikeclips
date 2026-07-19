@@ -5,19 +5,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Film } from "lucide-react";
 import { formatTime } from "@/lib/format";
+import { TimeRangeSelector } from "./TimeRangeSelector";
 
 interface SceneSelectorProps {
   scenes: ScoredBlock[];
   selectedSceneIndex: number | null;
   onSelectScene: (index: number) => void;
+  videoDuration?: number;
+  onCustomRange?: (start: number, end: number) => void;
 }
 
 export function SceneSelector({
   scenes,
   selectedSceneIndex,
   onSelectScene,
+  videoDuration = 0,
+  onCustomRange,
 }: SceneSelectorProps) {
-  if (scenes.length === 0) {
+  if (scenes.length === 0 && !videoDuration) {
     return (
       <div className="space-y-2">
         <div>
@@ -40,9 +45,13 @@ export function SceneSelector({
       <div>
         <h2 className="text-base font-semibold">Select a Scene to Edit</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Click a scene to start editing captions, music, and templates for it.
+          Click a scene or define a custom time range to start editing.
         </p>
       </div>
+
+      {videoDuration > 0 && onCustomRange && (
+        <TimeRangeSelector videoDuration={videoDuration} onApply={onCustomRange} />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
         {scenes.map((scene, i) => {
@@ -79,7 +88,11 @@ export function SceneSelector({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium">Scene {i + 1}</span>
+                      <span className="text-xs font-medium">
+                        {i === 0 && scene.start_time === 0 && scene.peak_intensity === 1
+                          ? "Custom"
+                          : `Scene ${i + 1}`}
+                      </span>
                       <Badge variant="outline" className="text-[10px] font-mono px-1 py-0">
                         {scene.duration.toFixed(1)}s
                       </Badge>

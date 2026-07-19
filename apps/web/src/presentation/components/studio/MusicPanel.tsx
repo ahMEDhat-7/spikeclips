@@ -2,7 +2,8 @@
 
 import { useRef, useState, useEffect } from "react";
 import { MusicTrack, createMusicTrack } from "@/domain/entities/music";
-import { jobApi } from "@/infrastructure/api/job-api.client";
+import { toastWarning, toastSuccess } from "@/lib/toast";
+import { formatDuration } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +25,8 @@ interface MusicPanelProps {
   originalVolume: number;
   onSetMusic: (track: MusicTrack | null) => void;
   onSetOriginalVolume: (volume: number) => void;
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds <= 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  onUpload: (file: File) => Promise<{ id: string; name: string; url: string; size: number }>;
+  onDelete: (key: string) => Promise<void>;
 }
 
 export function MusicPanel({
@@ -38,6 +34,8 @@ export function MusicPanel({
   originalVolume,
   onSetMusic,
   onSetOriginalVolume,
+  onUpload,
+  onDelete,
 }: MusicPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -70,7 +68,7 @@ export function MusicPanel({
 
     setIsUploading(true);
     try {
-      const result = await jobApi.uploadMusic(file);
+      const result = await onUpload(file);
       onSetMusic(
         createMusicTrack({
           id: result.id,
@@ -79,7 +77,9 @@ export function MusicPanel({
           duration: 0,
         })
       );
+      toastSuccess("Music uploaded successfully");
     } catch {
+      toastWarning("Upload failed — music will play locally but won't be included in the exported clip.");
       const url = URL.createObjectURL(file);
       const audio = new Audio(url);
       audio.addEventListener("loadedmetadata", () => {
@@ -106,7 +106,7 @@ export function MusicPanel({
     }
     if (musicTrack?.id && musicTrack.url && !musicTrack.url.startsWith("blob:")) {
       try {
-        await jobApi.deleteMusic(musicTrack.id);
+        await onDelete(musicTrack.id);
       } catch {
         // ignore
       }
@@ -171,6 +171,7 @@ export function MusicPanel({
             value={originalVolume}
             onChange={(e) => onSetOriginalVolume(Number(e.target.value))}
             className="w-full accent-primary h-1"
+            aria-label="Original audio volume"
           />
         </CardContent>
       </Card>
@@ -237,6 +238,7 @@ export function MusicPanel({
                   onSetMusic({ ...musicTrack, volume: Number(e.target.value) })
                 }
                 className="w-full accent-primary h-1"
+                aria-label="Music volume"
               />
             </div>
 
@@ -256,6 +258,7 @@ export function MusicPanel({
                     onSetMusic({ ...musicTrack, fadeIn: Number(e.target.value) })
                   }
                   className="w-full accent-primary h-1"
+                  aria-label="Music fade in duration"
                 />
               </div>
               <div className="space-y-1">
@@ -273,6 +276,7 @@ export function MusicPanel({
                     onSetMusic({ ...musicTrack, fadeOut: Number(e.target.value) })
                   }
                   className="w-full accent-primary h-1"
+                  aria-label="Music fade out duration"
                 />
               </div>
             </div>
@@ -284,7 +288,7 @@ export function MusicPanel({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-[9px] text-muted-foreground">Start ({formatDuration(musicTrack.trimStart)})</span>
+                    <span className="text-[10px] text-muted-foreground">Start ({formatDuration(musicTrack.trimStart)})</span>
                     <input
                       type="range"
                       min={0}
@@ -298,10 +302,11 @@ export function MusicPanel({
                         }
                       }}
                       className="w-full accent-primary h-1"
+                      aria-label="Music trim start"
                     />
                   </div>
                   <div>
-                    <span className="text-[9px] text-muted-foreground">End ({formatDuration(musicTrack.trimEnd)})</span>
+                    <span className="text-[10px] text-muted-foreground">End ({formatDuration(musicTrack.trimEnd)})</span>
                     <input
                       type="range"
                       min={0}
@@ -315,10 +320,11 @@ export function MusicPanel({
                         }
                       }}
                       className="w-full accent-primary h-1"
+                      aria-label="Music trim end"
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <ArrowLeftRight className="h-2.5 w-2.5" />
                   Effective: {formatDuration(effectiveDuration)}
                 </div>

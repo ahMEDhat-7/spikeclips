@@ -1,6 +1,7 @@
 "use client";
 
-import { StudioStep, STEP_LABELS } from "@/domain/entities/studio";
+import { StudioStep } from "@/domain/entities/studio";
+import { STEP_LABELS } from "@/presentation/constants/studio";
 import {
   LayoutGrid,
   Film,
@@ -34,15 +35,17 @@ interface ToolPaletteProps {
   onStepChange: (step: StudioStep) => void;
   expanded: boolean;
   onToggleExpand: () => void;
+  canGoToStep?: (step: StudioStep) => boolean;
 }
 
-export function ToolPalette({ currentStep, onStepChange, expanded, onToggleExpand }: ToolPaletteProps) {
+export function ToolPalette({ currentStep, onStepChange, expanded, onToggleExpand, canGoToStep }: ToolPaletteProps) {
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="flex flex-col gap-0.5 py-2 px-1.5 flex-1 overflow-hidden">
         {TOOLS.map((tool) => {
           const Icon = tool.icon;
           const isActive = currentStep === tool.step;
+          const isAccessible = canGoToStep ? canGoToStep(tool.step) : true;
 
           return (
             <button
@@ -52,9 +55,12 @@ export function ToolPalette({ currentStep, onStepChange, expanded, onToggleExpan
               } ${
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : isAccessible
+                    ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground/40 cursor-not-allowed"
               }`}
-              onClick={() => onStepChange(tool.step)}
+              onClick={() => isAccessible && onStepChange(tool.step)}
+              disabled={!isAccessible}
               aria-label={tool.label}
               title={tool.label}
             >

@@ -132,6 +132,20 @@ class CaptionDto {
   @IsNumber()
   @Min(0)
   shadowRadius?: number;
+
+  @ApiProperty({ description: "Horizontal position percent 0-100", example: 50, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  x?: number;
+
+  @ApiProperty({ description: "Vertical position percent 0-100", example: 50, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  y?: number;
 }
 
 class MusicConfigDto {
@@ -200,11 +214,10 @@ class TemplateConfigDto {
   @IsIn(["bold", "outlined", "shadow", "neon"])
   textStyle?: string;
 
-  @ApiPropertyOptional({ description: "Overlay effects to apply", example: ["vignette"] })
+  @ApiPropertyOptional({ description: "Overlay effects to apply", example: ["vignette", "countdown-numbers"] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(["vignette", "border", "glow", "blur-edges", "glitch"], { each: true })
   overlayEffects?: string[];
 }
 

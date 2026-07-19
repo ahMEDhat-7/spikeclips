@@ -4,9 +4,11 @@ import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStudio } from "@/application/hooks/use-studio";
 import { useExportClips } from "@/application/hooks/use-export-clips";
-import { jobApi } from "@/infrastructure/api/job-api.client";
+import { useJobApi } from "@/application/providers/api-provider";
 import { Job, JOB_STATUS } from "@/domain/entities/job";
 import { useAuth } from "@/application/hooks/use-auth";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
+import { useBeforeUnload } from "@/lib/hooks/use-before-unload";
 import { StudioLayout } from "@/presentation/components/studio/StudioLayout";
 import { StudioToolbar } from "@/presentation/components/studio/StudioToolbar";
 import { ToolPalette } from "@/presentation/components/studio/ToolPalette";
@@ -30,42 +32,50 @@ function StudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdFromUrl = searchParams.get("jobId");
+  const startTimeFromUrl = searchParams.get("start");
+  const endTimeFromUrl = searchParams.get("end");
   const studio = useStudio();
+  const jobApi = useJobApi();
   const { user } = useAuth();
 
   const [job, setJob] = useState<Job | null>(null);
   const [isLoadingJob, setIsLoadingJob] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [leftExpanded, setLeftExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  const hasUnsavedEdits = studio.platform !== null || studio.scenes.length > 0 || studio.captions.length > 0 || studio.musicTrack !== null || studio.selectedTemplate !== null;
+  useBeforeUnload(hasUnsavedEdits);
 
   const { clips, isExporting, exportClips, error: exportError } = useExportClips(job?.id ?? null);
 
   const initFromJobRef = useRef(studio.initFromJob);
   const goToStepRef = useRef(studio.goToStep);
+  const addCustomSceneRef = useRef(studio.addCustomScene);
+  const isAnalyzingRef = useRef(false);
   initFromJobRef.current = studio.initFromJob;
   goToStepRef.current = studio.goToStep;
+  addCustomSceneRef.current = studio.addCustomScene;
 
   const loadJob = useCallback(async (id: string) => {
     setIsLoadingJob(true);
     try {
       const loaded = await jobApi.getJob(id);
       setJob(loaded);
-      initFromJobRef.current(loaded.scenes ?? []);
-      goToStepRef.current("scenes");
+      const start = startTimeFromUrl !== null ? parseFloat(startTimeFromUrl) : null;
+      const end = endTimeFromUrl !== null ? parseFloat(endTimeFromUrl) : null;
+      if (start !== null && end !== null && !isNaN(start) && !isNaN(end) && end > start) {
+        addCustomSceneRef.current(start, end);
+      } else {
+        initFromJobRef.current(loaded.scenes ?? []);
+        goToStepRef.current("scenes");
+      }
     } catch {
       toastError("Failed to load job. Please check the URL and try again.");
     } finally {
       setIsLoadingJob(false);
     }
-  }, []);
+  }, [startTimeFromUrl, endTimeFromUrl]);
 
   useEffect(() => {
     if (jobIdFromUrl && !job) {
@@ -96,12 +106,13 @@ function StudioContent() {
   }, []);
 
   const handleAnalyze = useCallback(async () => {
-    if (!urlInput.trim()) return;
+    if (!urlInput.trim() || isAnalyzingRef.current) return;
     const url = urlInput.trim();
     if (!url.includes("youtube.com") && !url.includes("youtu.be")) {
       toastError("Please enter a valid YouTube URL.");
       return;
     }
+    isAnalyzingRef.current = true;
     setIsLoadingJob(true);
     try {
       const newJob = await jobApi.createJob(url);
@@ -116,6 +127,7 @@ function StudioContent() {
       } catch {
         toastError("Analysis failed. Please try again.");
       } finally {
+        isAnalyzingRef.current = false;
         setIsLoadingJob(false);
       }
     }, [urlInput, pollJob]);
@@ -143,8 +155,8 @@ function StudioContent() {
           format: (outputConfig?.format ?? DEFAULT_OUTPUT_FORMAT) as OutputFormat,
           quality: (outputConfig?.quality ?? DEFAULT_OUTPUT_QUALITY) as OutputQuality,
           captions: studio.captions.length > 0
-            ? studio.captions.map(({ text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius }) => ({
-                text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius,
+            ? studio.captions.map(({ text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius, x, y }) => ({
+                text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius, x, y,
               }))
             : undefined,
           music: musicConfig,
@@ -243,6 +255,8 @@ function StudioContent() {
             scenes={studio.scenes}
             selectedSceneIndex={studio.selectedSceneIndex}
             onSelectScene={studio.selectScene}
+            videoDuration={job?.videoDuration ?? 0}
+            onCustomRange={studio.addCustomScene}
           />
         );
 
@@ -264,6 +278,8 @@ function StudioContent() {
             originalVolume={studio.originalVolume}
             onSetMusic={studio.setMusic}
             onSetOriginalVolume={studio.setOriginalVolume}
+            onUpload={(file) => jobApi.uploadMusic(file)}
+            onDelete={(key) => jobApi.deleteMusic(key)}
           />
         );
 
@@ -312,6 +328,7 @@ function StudioContent() {
         scenes={studio.scenes}
         selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
         musicTrack={studio.musicTrack}
+        onCaptionDrag={(id, x, y) => studio.updateCaption(id, { x, y })}
       />
     );
   };
@@ -359,6 +376,7 @@ function StudioContent() {
           onStepChange={studio.goToStep}
           expanded={leftExpanded}
           onToggleExpand={() => setLeftExpanded((p) => !p)}
+          canGoToStep={studio.canGoToStep}
         />
       }
       center={renderCenter()}

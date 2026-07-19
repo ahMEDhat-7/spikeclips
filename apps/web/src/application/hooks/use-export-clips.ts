@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { jobApi, StudioExportConfig } from "../../infrastructure/api/job-api.client";
-import { ClipResponse } from "../../domain/ports/job-api.port";
+import { useJobApi } from "@/application/providers/api-provider";
+import { ClipResponse, StudioExportConfig } from "../../domain/ports/job-api.port";
 import { CLIP_STATUS } from "../../domain/entities/job";
 import { POLLING_INTERVAL_MS } from "@/lib/constants";
 
 const MAX_POLL_ATTEMPTS = 120;
 
 export function useExportClips(jobId: string | null) {
+  const jobApi = useJobApi();
   const [clips, setClips] = useState<ClipResponse[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);

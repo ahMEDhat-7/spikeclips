@@ -24,7 +24,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
-import { Roles } from "../../infrastructure/auth/roles.decorator";
+
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
 
 @ApiTags("Clips")
@@ -78,7 +78,6 @@ export class ClipsController {
   }
 
   @Get(":id/download")
-  @Roles("pro", "team")
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Download a clip",
@@ -140,12 +139,21 @@ export class ClipsController {
     try {
       const stream = await this.storage.createReadStream(key);
       const ext = key.split(".").pop()?.toLowerCase() || "mp4";
-      const contentType = ext === "webm" ? "video/webm" : "video/mp4";
+      const mimeMap: Record<string, string> = {
+        mp4: "video/mp4",
+        webm: "video/webm",
+        mp3: "audio/mpeg",
+        wav: "audio/wav",
+        ogg: "audio/ogg",
+        m4a: "audio/mp4",
+      };
+      const contentType = mimeMap[ext] || "application/octet-stream";
+      const isAudio = ["mp3", "wav", "ogg", "m4a"].includes(ext);
       const filename = key.split("/").pop()?.replace(/[^a-zA-Z0-9._-]/g, "_") || `clip.${ext}`;
 
       res.set({
         "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": isAudio ? "inline" : `attachment; filename="${filename}"`,
       });
 
       stream.on("error", (err) => {

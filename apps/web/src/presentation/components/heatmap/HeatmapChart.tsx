@@ -13,7 +13,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { HeatmapSpike, ScoredBlock } from "@/domain/entities/job";
-import { formatTime } from "@/lib/format";
+import { formatTime, parseTimeLabel } from "@/lib/format";
 
 interface HeatmapChartProps {
   heatmap: HeatmapSpike[];
@@ -24,14 +24,6 @@ interface HeatmapChartProps {
   onChartClick?: (time: number) => void;
   onChartMouseMove?: (time: number | null) => void;
   interactive?: boolean;
-}
-
-function parseTimeLabel(label: string): number {
-  const parts = label.split(":");
-  if (parts.length === 2) {
-    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-  }
-  return parseInt(parts[0], 10) || 0;
 }
 
 export function HeatmapChart({

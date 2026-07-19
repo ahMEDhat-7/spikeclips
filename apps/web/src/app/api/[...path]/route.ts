@@ -49,7 +49,14 @@ async function proxyRequest(req: NextRequest) {
   if (res.status >= 300 && res.status < 400) {
     const location = res.headers.get("location");
     if (location) {
-      return NextResponse.redirect(location, res.status);
+      const redirectHeaders = new Headers();
+      redirectHeaders.set("location", location);
+      if (typeof res.headers.getSetCookie === "function") {
+        for (const cookie of res.headers.getSetCookie()) {
+          redirectHeaders.append("set-cookie", cookie);
+        }
+      }
+      return new NextResponse(null, { status: res.status, headers: redirectHeaders });
     }
   }
 

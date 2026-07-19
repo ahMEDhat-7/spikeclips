@@ -7,13 +7,16 @@ import {
   EditTemplate,
   TemplateCategory,
   TemplateCategoryFilter,
+} from "@/domain/entities/template";
+import {
   TEXT_ANIMATIONS,
   TRANSITIONS,
   LAYOUTS,
-  TEXT_STYLES,
+  TEMPLATE_TEXT_STYLES,
   TEMPLATE_CATEGORIES,
-} from "@/domain/entities/template";
+} from "@/presentation/constants/template";
 import { TEMPLATES } from "@/domain/data/templates";
+import { toastSuccess } from "@/lib/toast";
 import { Check, Sparkles, Sliders, Zap, ArrowRightLeft, LayoutGrid, Type } from "lucide-react";
 
 interface TemplateLibraryProps {
@@ -91,6 +94,7 @@ export function TemplateLibrary({
       onSelect(null);
     } else {
       onSelect(template);
+      toastSuccess(`Template "${template.name}" applied`);
     }
   };
 
@@ -140,8 +144,8 @@ export function TemplateLibrary({
             </div>
             <div className="space-y-1.5">
               <div className="space-y-0.5">
-                <label className="text-[9px] text-muted-foreground flex items-center gap-1">
-                  <Zap className="h-2.5 w-2.5" /> Text Animation
+                <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Zap className="h-3 w-3" /> Text Animation
                 </label>
                 <div className="flex flex-wrap gap-0.5">
                   {TEXT_ANIMATIONS.map((a) => (
@@ -150,7 +154,7 @@ export function TemplateLibrary({
                       onClick={() =>
                         onSelect({ ...selectedTemplate, config: { ...selectedTemplate.config, textAnimation: a.id } })
                       }
-                      className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
                         selectedTemplate.config.textAnimation === a.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
@@ -162,8 +166,8 @@ export function TemplateLibrary({
                 </div>
               </div>
               <div className="space-y-0.5">
-                <label className="text-[9px] text-muted-foreground flex items-center gap-1">
-                  <ArrowRightLeft className="h-2.5 w-2.5" /> Transition In
+                <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <ArrowRightLeft className="h-3 w-3" /> Transition
                 </label>
                 <div className="flex flex-wrap gap-0.5">
                   {TRANSITIONS.map((t) => (
@@ -172,7 +176,7 @@ export function TemplateLibrary({
                       onClick={() =>
                         onSelect({ ...selectedTemplate, config: { ...selectedTemplate.config, transitionIn: t.id } })
                       }
-                      className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
                         selectedTemplate.config.transitionIn === t.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
@@ -184,8 +188,8 @@ export function TemplateLibrary({
                 </div>
               </div>
               <div className="space-y-0.5">
-                <label className="text-[9px] text-muted-foreground flex items-center gap-1">
-                  <LayoutGrid className="h-2.5 w-2.5" /> Layout
+                <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <LayoutGrid className="h-3 w-3" /> Layout
                 </label>
                 <div className="flex flex-wrap gap-0.5">
                   {LAYOUTS.map((l) => (
@@ -194,7 +198,7 @@ export function TemplateLibrary({
                       onClick={() =>
                         onSelect({ ...selectedTemplate, config: { ...selectedTemplate.config, layout: l.id } })
                       }
-                      className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
                         selectedTemplate.config.layout === l.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
@@ -206,17 +210,17 @@ export function TemplateLibrary({
                 </div>
               </div>
               <div className="space-y-0.5">
-                <label className="text-[9px] text-muted-foreground flex items-center gap-1">
-                  <Type className="h-2.5 w-2.5" /> Text Style
+                <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Type className="h-3 w-3" /> Text Style
                 </label>
                 <div className="flex flex-wrap gap-0.5">
-                  {TEXT_STYLES.map((s) => (
+                  {TEMPLATE_TEXT_STYLES.map((s) => (
                     <button
                       key={s.id}
                       onClick={() =>
                         onSelect({ ...selectedTemplate, config: { ...selectedTemplate.config, textStyle: s.id } })
                       }
-                      className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
                         selectedTemplate.config.textStyle === s.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"

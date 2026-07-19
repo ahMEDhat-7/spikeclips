@@ -158,10 +158,21 @@ export class FfmpegService implements VideoProcessor {
       const color = cap.color.replace("#", "0x");
 
       let yExpr: string;
-      switch (cap.position) {
-        case "top": yExpr = "h*0.1"; break;
-        case "bottom": yExpr = "h*0.85"; break;
-        default: yExpr = "(h-text_h)/2";
+      if (cap.y !== undefined && cap.y !== null) {
+        yExpr = `h*${(cap.y / 100).toFixed(3)}-text_h/2`;
+      } else {
+        switch (cap.position) {
+          case "top": yExpr = "h*0.1"; break;
+          case "bottom": yExpr = "h*0.85"; break;
+          default: yExpr = "(h-text_h)/2";
+        }
+      }
+
+      let xExpr: string;
+      if (cap.x !== undefined && cap.x !== null) {
+        xExpr = `w*${(cap.x / 100).toFixed(3)}-text_w/2`;
+      } else {
+        xExpr = "(w-text_w)/2";
       }
 
       const startFrame = cap.startFrame ?? 0;
@@ -174,7 +185,7 @@ export class FfmpegService implements VideoProcessor {
         `:fontfile=${fontFile}` +
         `:fontsize=${fontSize}` +
         `:fontcolor=${color}` +
-        `:x=(w-text_w)/2` +
+        `:x=${xExpr}` +
         `:y=${yExpr}` +
         `:enable='between(t\\,${startSec.toFixed(3)}\\,${endSec.toFixed(3)})'`
       );

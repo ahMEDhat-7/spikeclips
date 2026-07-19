@@ -11,7 +11,8 @@ import { ScoredBlock } from "@/domain/entities/job";
 import { CLIP_STATUS } from "@/domain/entities/job";
 import { ClipResponse } from "@/domain/ports/job-api.port";
 import { formatTime } from "@/lib/format";
-import { OutputFormat, OutputQuality, OUTPUT_FORMATS, OUTPUT_QUALITIES, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
+import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
+import { OUTPUT_FORMATS, OUTPUT_QUALITIES } from "@/presentation/constants/export";
 import {
   Download,
   Loader2,

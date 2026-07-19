@@ -10,11 +10,14 @@ import {
   CaptionPosition,
   CaptionTextStyle,
   CaptionTextAlign,
+} from "@/domain/entities/caption";
+import {
   CAPTION_FONTS,
   CAPTION_COLORS,
   TEXT_STYLES,
   TEXT_ALIGNMENTS,
-} from "@/domain/entities/caption";
+} from "@/presentation/constants/caption";
+import { TEXT_ANIMATIONS } from "@/presentation/constants/template";
 import {
   Plus,
   Trash2,
@@ -28,9 +31,11 @@ import {
   Eye,
   Paintbrush,
   Clock,
+  Move,
 } from "lucide-react";
 import { FPS } from "@/lib/constants";
-import { TEXT_ANIMATIONS } from "@/domain/entities/template";
+import { formatFrame } from "@/lib/format";
+import { toastSuccess } from "@/lib/toast";
 
 interface CaptionEditorProps {
   captions: Caption[];
@@ -38,14 +43,6 @@ interface CaptionEditorProps {
   onAdd: (caption?: Partial<Caption>) => void;
   onUpdate: (id: string, updates: Partial<Caption>) => void;
   onRemove: (id: string) => void;
-}
-
-function formatFrame(frame: number, fps = FPS): string {
-  const totalSeconds = frame / fps;
-  const m = Math.floor(totalSeconds / 60);
-  const s = Math.floor(totalSeconds % 60);
-  const ms = Math.floor((totalSeconds % 1) * 100);
-  return `${m}:${s.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
 }
 
 export function CaptionEditor({
@@ -65,6 +62,7 @@ export function CaptionEditor({
 
   const handleAdd = () => {
     onAdd();
+    toastSuccess("Caption added");
   };
 
   return (
@@ -164,7 +162,7 @@ export function CaptionEditor({
                   </label>
                   <div className="grid grid-cols-2 gap-1.5">
                     <div>
-                      <span className="text-[9px] text-muted-foreground">Start</span>
+                      <span className="text-[10px] text-muted-foreground">Start</span>
                       <Input
                         type="number"
                         min={0}
@@ -176,11 +174,11 @@ export function CaptionEditor({
                           const endFrame = Math.max(startFrame + 1, selected.endFrame);
                           onUpdate(selected.id, { startFrame, endFrame });
                         }}
-                        className="text-[11px] font-mono h-7"
+                        className="text-xs font-mono h-7"
                       />
                     </div>
                     <div>
-                      <span className="text-[9px] text-muted-foreground">End</span>
+                      <span className="text-[10px] text-muted-foreground">End</span>
                       <Input
                         type="number"
                         min={0}
@@ -191,11 +189,11 @@ export function CaptionEditor({
                           const endFrame = Math.max(selected.startFrame + 1, Math.round(val * FPS));
                           onUpdate(selected.id, { endFrame });
                         }}
-                        className="text-[11px] font-mono h-7"
+                        className="text-xs font-mono h-7"
                       />
                     </div>
                   </div>
-                  <p className="text-[9px] text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     {formatFrame(selected.startFrame)} — {formatFrame(selected.endFrame)}
                   </p>
                 </div>
@@ -232,6 +230,7 @@ export function CaptionEditor({
                         value={selected.size}
                         onChange={(e) => onUpdate(selected.id, { size: Number(e.target.value) })}
                         className="flex-1 accent-primary h-1"
+                        aria-label="Caption size"
                       />
                       <span className="text-[10px] font-mono text-muted-foreground w-7 text-right">
                         {selected.size}
@@ -251,6 +250,7 @@ export function CaptionEditor({
                         value={selected.opacity}
                         onChange={(e) => onUpdate(selected.id, { opacity: Number(e.target.value) })}
                         className="flex-1 accent-primary h-1"
+                        aria-label="Caption opacity"
                       />
                       <span className="text-[10px] font-mono text-muted-foreground w-7 text-right">
                         {Math.round(selected.opacity * 100)}%
@@ -292,13 +292,42 @@ export function CaptionEditor({
 
                 <div className="space-y-1">
                   <label className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
-                    <MoveVertical className="h-3 w-3" /> Position
+                    <Move className="h-3 w-3" /> Position (drag on preview)
                   </label>
-                  <div className="flex gap-1">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">X: {Math.round(selected.x ?? 50)}%</span>
+                      <input
+                        type="range"
+                        min={5}
+                        max={95}
+                        value={selected.x ?? 50}
+                        onChange={(e) => onUpdate(selected.id, { x: Number(e.target.value) })}
+                        className="w-full accent-primary h-1"
+                        aria-label="Caption horizontal position"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">Y: {Math.round(selected.y ?? 50)}%</span>
+                      <input
+                        type="range"
+                        min={5}
+                        max={95}
+                        value={selected.y ?? 50}
+                        onChange={(e) => onUpdate(selected.id, { y: Number(e.target.value) })}
+                        className="w-full accent-primary h-1"
+                        aria-label="Caption vertical position"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-1 mt-1">
                     {(["top", "center", "bottom"] as CaptionPosition[]).map((p) => (
                       <button
                         key={p}
-                        onClick={() => onUpdate(selected.id, { position: p })}
+                        onClick={() => {
+                          const posMap = { top: { x: 50, y: 15 }, center: { x: 50, y: 50 }, bottom: { x: 50, y: 85 } };
+                          onUpdate(selected.id, { position: p, ...posMap[p] });
+                        }}
                         className={`flex-1 px-1.5 py-1 rounded text-[10px] capitalize transition-colors ${
                           selected.position === p
                             ? "bg-primary text-primary-foreground"
@@ -414,6 +443,7 @@ export function CaptionEditor({
                         value={selected.strokeWidth}
                         onChange={(e) => onUpdate(selected.id, { strokeWidth: Number(e.target.value) })}
                         className="flex-1 accent-primary h-1"
+                        aria-label="Caption stroke width"
                       />
                       <span className="text-[10px] font-mono text-muted-foreground w-5 text-right">
                         {selected.strokeWidth}
@@ -431,6 +461,7 @@ export function CaptionEditor({
                         value={selected.shadowRadius}
                         onChange={(e) => onUpdate(selected.id, { shadowRadius: Number(e.target.value) })}
                         className="flex-1 accent-primary h-1"
+                        aria-label="Caption shadow radius"
                       />
                       <span className="text-[10px] font-mono text-muted-foreground w-5 text-right">
                         {selected.shadowRadius}

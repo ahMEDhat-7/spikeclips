@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UrlInput } from "@/presentation/components/jobs/UrlInput";
@@ -11,65 +11,24 @@ import { Progress } from "@/components/ui/progress";
 import { SkeletonDashboard } from "@/components/ui/skeleton-variants";
 import { useAnalyzeVideo } from "@/application/hooks/use-analyze-video";
 import { useAuth } from "@/application/hooks/use-auth";
-import { jobApi } from "@/infrastructure/api/job-api.client";
-import { Job, JOB_STATUS } from "@/domain/entities/job";
+import { JOB_STATUS } from "@/domain/entities/job";
 import { SceneEditor } from "@/presentation/components/scenes/SceneEditor";
+import { EditableScene } from "@/application/hooks/use-scene-editor";
 import { VideoScenePreview } from "@/presentation/components/video/VideoScenePreview";
 import { History, ArrowLeft, ExternalLink, Clock } from "lucide-react";
-import { toastError } from "@/lib/toast";
+import { useAnalysisProgress } from "@/lib/hooks/use-analysis-progress";
+import { useJobHistory } from "@/lib/hooks/use-job-history";
 
 function DashboardContent() {
   const searchParams = useSearchParams();
   const { user, refreshUser } = useAuth();
 
   const { job, isLoading, error, analyze, loadJob } = useAnalyzeVideo(refreshUser);
-  const [jobHistory, setJobHistory] = useState<Job[]>([]);
+  const { jobHistory } = useJobHistory(user?.id);
+  const { progress, elapsedTime } = useAnalysisProgress(isLoading, job?.status);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | undefined>(undefined);
-  const [progress, setProgress] = useState(0);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(0);
-
-  const loadHistory = useCallback(async () => {
-    if (!user) return;
-    try {
-      const jobs = await jobApi.getJobs();
-      setJobHistory(jobs);
-    } catch {
-      toastError("Failed to load job history.");
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user) loadHistory();
-  }, [user, loadHistory]);
-
-  useEffect(() => {
-    if (isLoading) {
-      startTimeRef.current = Date.now();
-      setProgress(0);
-      setElapsedTime(0);
-
-      progressIntervalRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTimeRef.current) / 1000;
-        setElapsedTime(elapsed);
-        const estimated = Math.min(90, (elapsed / 60) * 90);
-        setProgress(estimated);
-      }, 500);
-    } else if (job?.status === JOB_STATUS.COMPLETED) {
-      setProgress(100);
-    } else if (job?.status === JOB_STATUS.FAILED) {
-      setProgress(0);
-    }
-
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, [isLoading, job?.status]);
-
+  const [editedScenes, setEditedScenes] = useState<EditableScene[]>([]);
   const isProcessing = job?.status === JOB_STATUS.PROCESSING;
   const isCompleted = job?.status === JOB_STATUS.COMPLETED;
 
@@ -267,6 +226,7 @@ function DashboardContent() {
                       suggestedScenes={job.scenes ?? []}
                       scenesLimit={user?.scenesLimit ?? 3}
                       onSceneSelect={setSelectedSceneIndex}
+                      onScenesChange={setEditedScenes}
                     />
                   </CardContent>
                 </Card>
@@ -277,7 +237,13 @@ function DashboardContent() {
           {isCompleted && (
             <div className="flex justify-center">
               <Button asChild size="lg">
-                <Link href={`/studio?jobId=${job.id}`}>
+                <Link
+                  href={
+                    editedScenes.length > 0
+                      ? `/studio?jobId=${job.id}&start=${editedScenes[0].start_time}&end=${editedScenes[0].end_time}`
+                      : `/studio?jobId=${job.id}`
+                  }
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open in Studio
                 </Link>

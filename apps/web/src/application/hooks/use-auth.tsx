@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, createContext, useContext, ReactNode } from "react";
-import { authApi } from "../../infrastructure/api/auth-api.client";
+import { useAuthApi } from "@/application/providers/api-provider";
 import { toastWarning } from "@/lib/toast";
 import { PlanTier } from "@spikeclips/shared";
 
@@ -35,6 +35,7 @@ export function useAuth() {
 }
 
 function useAuthProvider(): AuthContextType {
+  const authApi = useAuthApi();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

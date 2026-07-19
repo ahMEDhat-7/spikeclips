@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useEffect, useId } from "react";
-import { Caption, CAPTION_FONTS } from "@/domain/entities/caption";
+import { useMemo, useEffect, useId, useRef } from "react";
+import { Caption } from "@/domain/entities/caption";
+import { CAPTION_FONTS } from "@/presentation/constants/caption";
 import { FPS } from "@/lib/constants";
 
 interface CaptionOverlayProps {
@@ -9,18 +10,8 @@ interface CaptionOverlayProps {
   sceneElapsed: number;
   containerWidth: number;
   containerHeight: number;
-}
-
-function getPositionStyle(position: Caption["position"], containerHeight: number) {
-  const padding = containerHeight * 0.08;
-  switch (position) {
-    case "top":
-      return { top: padding, left: 0, right: 0 };
-    case "bottom":
-      return { bottom: padding, left: 0, right: 0 };
-    default:
-      return { top: "50%", left: 0, right: 0, transform: "translateY(-50%)" };
-  }
+  isDraggable?: boolean;
+  onDrag?: (id: string, x: number, y: number) => void;
 }
 
 function getTextStyleStyles(caption: Caption): React.CSSProperties {
@@ -68,10 +59,13 @@ export function CaptionOverlay({
   sceneElapsed,
   containerWidth,
   containerHeight,
+  isDraggable = false,
+  onDrag,
 }: CaptionOverlayProps) {
   const styleId = useId();
   const captionStart = caption.startFrame / FPS;
   const captionEnd = caption.endFrame / FPS;
+  const isDraggingRef = useRef(false);
 
   const isVisible = sceneElapsed >= captionStart && sceneElapsed <= captionEnd;
 
@@ -100,10 +94,25 @@ export function CaptionOverlay({
     };
   }, [isVisible, styleId]);
 
-  const positionStyle = useMemo(
-    () => getPositionStyle(caption.position, containerHeight),
-    [caption.position, containerHeight]
-  );
+  const positionStyle = useMemo<React.CSSProperties>(() => {
+    if (caption.x != null && caption.y != null) {
+      return {
+        position: "absolute",
+        left: `${caption.x}%`,
+        top: `${caption.y}%`,
+        transform: "translate(-50%, -50%)",
+      };
+    }
+    const padding = containerHeight * 0.08;
+    switch (caption.position) {
+      case "top":
+        return { position: "absolute", top: padding, left: 0, right: 0 };
+      case "bottom":
+        return { position: "absolute", bottom: padding, left: 0, right: 0 };
+      default:
+        return { position: "absolute", top: "50%", left: 0, right: 0, transform: "translateY(-50%)" };
+    }
+  }, [caption.x, caption.y, caption.position, containerHeight]);
 
   const textStyleStyles = useMemo(() => getTextStyleStyles(caption), [caption]);
   const animStyle = useMemo(() => getAnimationKeyframes(caption.animation), [caption.animation]);
@@ -115,47 +124,76 @@ export function CaptionOverlay({
 
   if (!isVisible) return null;
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!isDraggable || !onDrag) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    isDraggingRef.current = true;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startCapX = caption.x ?? 50;
+    const startCapY = caption.y ?? 50;
+    const rect = target.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      const newX = Math.max(5, Math.min(95, startCapX + (dx / rect.width) * 100));
+      const newY = Math.max(5, Math.min(95, startCapY + (dy / rect.height) * 100));
+      onDrag(caption.id, newX, newY);
+    };
+
+    const onUp = () => {
+      isDraggingRef.current = false;
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+    };
+
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+  };
+
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+      className={`text-center leading-tight break-words z-[7] ${
+        isDraggable ? "pointer-events-auto cursor-grab active:cursor-grabbing" : "pointer-events-none"
+      }`}
       style={{
-        padding: `${containerHeight * 0.08}px ${containerWidth * 0.05}px`,
+        fontFamily,
+        fontSize: `${fontSize}px`,
+        color: caption.color,
+        opacity: caption.opacity,
+        textAlign: caption.textAlign,
+        maxWidth: "100%",
+        wordBreak: "break-word",
+        backgroundColor: caption.backgroundEnabled ? caption.backgroundColor : "transparent",
+        padding: caption.backgroundEnabled ? "4px 12px" : undefined,
+        borderRadius: caption.backgroundEnabled ? "4px" : undefined,
+        ...positionStyle,
+        ...textStyleStyles,
+        ...animStyle,
       }}
+      onPointerDown={handlePointerDown}
     >
-      <div
-        className="text-center leading-tight break-words"
-        style={{
-          fontFamily,
-          fontSize: `${fontSize}px`,
-          color: caption.color,
-          opacity: caption.opacity,
-          textAlign: caption.textAlign,
-          maxWidth: "100%",
-          wordBreak: "break-word",
-          backgroundColor: caption.backgroundEnabled ? caption.backgroundColor : "transparent",
-          padding: caption.backgroundEnabled ? "4px 12px" : undefined,
-          borderRadius: caption.backgroundEnabled ? "4px" : undefined,
-          ...positionStyle,
-          ...textStyleStyles,
-          ...animStyle,
-        }}
-      >
-        {caption.animation === "pop" && words.length > 1
-          ? words.map((word, i) => (
-              <span
-                key={i}
-                style={{
-                  display: "inline-block",
-                  animation: `captionPopIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) ${i * 0.08}s forwards`,
-                  opacity: 0,
-                  marginRight: i < words.length - 1 ? "0.3em" : 0,
-                }}
-              >
-                {word}
-              </span>
-            ))
-          : caption.text}
-      </div>
+      {caption.animation === "pop" && words.length > 1
+        ? words.map((word, i) => (
+            <span
+              key={i}
+              style={{
+                display: "inline-block",
+                animation: `captionPopIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) ${i * 0.08}s forwards`,
+                opacity: 0,
+                marginRight: i < words.length - 1 ? "0.3em" : 0,
+              }}
+            >
+              {word}
+            </span>
+          ))
+        : caption.text}
     </div>
   );
 }
